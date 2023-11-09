@@ -407,6 +407,9 @@ void yyfree (void *  );
 /* %% [1.0] yytext/yyin/yyout/yy_state_type/yylineno etc. def's & init go here */
 /* Begin user sect3 */
 
+#define yywrap(n) 1
+#define YY_SKIP_YYWRAP
+
 #define FLEX_DEBUG
 
 typedef unsigned char YY_CHAR;
@@ -523,7 +526,7 @@ int yy_flex_debug = 1;
 
 static yyconst flex_int16_t yy_rule_linenum[2] =
     {   0,
-       64
+       68
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -543,10 +546,11 @@ char *yytext;
  *  output, so headers and global definitions are placed here to be visible
  * to the code in the file.  Don't remove anything that was here initially
  */
-#line 11 "cool.flex"
+#line 14 "cool.flex"
 #include <cool-parse.h>
 #include <stringtab.h>
 #include <utilities.h>
+#include <stdlib.h>
 
 /* The compiler assumes these identifiers. */
 #define yylval cool_yylval
@@ -582,7 +586,7 @@ extern YYSTYPE cool_yylval;
 /*
  * Define names for regular expressions here.
  */
-#line 586 "cool-lex.cc"
+#line 590 "cool-lex.cc"
 
 #define INITIAL 0
 
@@ -824,7 +828,7 @@ YY_DECL
 	register int yy_act;
     
 /* %% [7.0] user's declarations go here */
-#line 54 "cool.flex"
+#line 58 "cool.flex"
 
 
  /*
@@ -835,7 +839,7 @@ YY_DECL
  /*
   *  The multiple-character operators.
   */
-#line 839 "cool-lex.cc"
+#line 843 "cool-lex.cc"
 
 	if ( !(yy_init) )
 		{
@@ -951,7 +955,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 64 "cool.flex"
+#line 68 "cool.flex"
 { return (DARROW); }
 	YY_BREAK
 /*
@@ -966,10 +970,10 @@ YY_RULE_SETUP
   */
 case 2:
 YY_RULE_SETUP
-#line 80 "cool.flex"
+#line 84 "cool.flex"
 ECHO;
 	YY_BREAK
-#line 973 "cool-lex.cc"
+#line 977 "cool-lex.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2103,7 +2107,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 80 "cool.flex"
+#line 84 "cool.flex"
 
 
 
