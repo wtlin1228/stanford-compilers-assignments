@@ -706,7 +706,7 @@ char *yytext;
 /* Max size of string constants */
 #define MAX_STR_CONST 1025
 #define YY_NO_UNPUT   /* keep g++ happy */
-//#define yywrap() 1
+#define yywrap() 1
 
 extern FILE *token_file; /* we read from this file */
 
@@ -804,13 +804,13 @@ void yyset_lineno (int line_number  );
  * section 1.
  */
 
-#ifndef YY_SKIP_YYWRAP
-#ifdef __cplusplus
-extern "C" int yywrap (void );
-#else
-extern int yywrap (void );
-#endif
-#endif
+// #ifndef YY_SKIP_YYWRAP
+// #ifdef __cplusplus
+// extern "C" int yywrap (void );
+// #else
+// extern int yywrap (void );
+// #endif
+// #endif
 
 /* %not-for-header */
 
