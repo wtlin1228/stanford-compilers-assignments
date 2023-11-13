@@ -47,6 +47,7 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+int nested_comment_depth = 0;
 int string_const_length = 0;
 char get_string_special_char(char c) {
   if (c == 'n') return '\n';
@@ -58,6 +59,8 @@ char get_string_special_char(char c) {
 
 %}
 
+%x SINGLE_LINE_COMMENT
+%x NESTED_COMMENT
 %x STRING
 %x ESCAPE
 %x TERMINATE
@@ -69,6 +72,7 @@ char get_string_special_char(char c) {
 /*
  * 10.1 Integers, Identifiers, and Special Notation
  */
+
 DIGIT                   [0-9]
 LOWERCASE_LETTER        [a-z]
 UPPERCASE_LETTER        [A-Z]
@@ -84,20 +88,22 @@ LE                      "<="
 /*
  * 10.2 Strings
  */
+
 STRING_START    "\""
 STRING_END      "\""
 
 /*
  * 10.3 Comments
  */
+
 ONE_LINE_COMMENT_START         "--"
-ONE_LINE_COMMENT_END           "--"
 MULTIPLE_LINE_COMMENT_START    "\(\*"
 MULTIPLE_LINE_COMMENT_END      "\*\)"
 
 /*
  * 10.4 Keywords are case insensitive, expect for the constants true and false
  */
+
 CLASS       (?i:class)
 ELSE        (?i:else)
 FI          (?i:fi)
@@ -122,6 +128,7 @@ BOOL_CONST_FALSE    (f)(?i:alse)
 /*
  * 10.5 White Space
  */
+
 WHITE_SPACE    (" "|\f|\r|\t|\v)
 
 %%
@@ -129,6 +136,7 @@ WHITE_SPACE    (" "|\f|\r|\t|\v)
  /*
   *  The keywords.
   */
+
 {CLASS} { return CLASS; }
 {ELSE} { return ELSE; }
 {FI} { return FI; }
@@ -150,6 +158,7 @@ WHITE_SPACE    (" "|\f|\r|\t|\v)
  /*
   *  The multiple-character operators.
   */
+
 {ASSIGN} { return ASSIGN; }
 {DARROW} { return DARROW; }
 {LE} { return LE; }
@@ -157,8 +166,8 @@ WHITE_SPACE    (" "|\f|\r|\t|\v)
  /*
   *  The single-character operators.
   */
-{SINGLE_CHAR_OPERATOR} { return yytext[0]; }
 
+{SINGLE_CHAR_OPERATOR} { return yytext[0]; }
 
 {INTEGER} {
   cool_yylval.symbol = inttable.add_string(yytext);
@@ -185,8 +194,43 @@ WHITE_SPACE    (" "|\f|\r|\t|\v)
 }
 
  /*
+  *  Single line comments
+  */
+
+{ONE_LINE_COMMENT_START} { BEGIN(SINGLE_LINE_COMMENT); };
+<SINGLE_LINE_COMMENT>\n {
+  curr_lineno++;
+  BEGIN(INITIAL);
+}
+<SINGLE_LINE_COMMENT>. {}
+
+ /*
   *  Nested comments
   */
+
+{MULTIPLE_LINE_COMMENT_START} { 
+  nested_comment_depth++;
+  BEGIN(NESTED_COMMENT); 
+}
+<NESTED_COMMENT>{MULTIPLE_LINE_COMMENT_START} {
+  nested_comment_depth++;
+}
+<NESTED_COMMENT>{MULTIPLE_LINE_COMMENT_END} {
+  nested_comment_depth--;
+  if (nested_comment_depth < 0) {
+    cool_yylval.error_msg = "Unmatched *)";
+    return ERROR;
+  } else if (nested_comment_depth == 0) {
+    BEGIN(INITIAL);
+  }
+}
+<NESTED_COMMENT><<EOF>> {
+  cool_yylval.error_msg = "EOF in comment";
+  BEGIN(TERMINATE);
+  return ERROR;
+}
+<NESTED_COMMENT>\n { curr_lineno++; }
+<NESTED_COMMENT>. {}
 
 
  /*
