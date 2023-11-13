@@ -1,6 +1,8 @@
 # PA2
 
-[cool.flex](assignments/PA2/cool.flex)
+Grading: 63/63
+
+[cool.flex](assignments/PA2/cool.flex) 
 
 ## Resource
 
