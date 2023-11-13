@@ -47,7 +47,20 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+int string_const_length = 0;
+char get_string_special_char(char c) {
+  if (c == 'n') return '\n';
+  else if (c == 't') return '\t';
+  else if (c == 'b') return '\b';
+  else if (c == 'f') return '\f';
+  else return c;
+}
+
 %}
+
+%x STRING
+%x ESCAPE
+%x TERMINATE
 
 /*
  * Define names for regular expressions here.
@@ -176,20 +189,51 @@ WHITE_SPACE    (" "|\f|\r|\t|\v)
   */
 
 
-
-
- /*
-  * Keywords are case-insensitive except for the values true and false,
-  * which must begin with a lower-case letter.
-  */
-
-
  /*
   *  String constants (C syntax)
   *  Escape sequence \c is accepted for all characters c. Except for 
   *  \n \t \b \f, the result is c.
   *
   */
+
+{STRING_START} { BEGIN(STRING); }
+<STRING>{STRING_END} {
+  string_buf_ptr = (char*) &string_buf;
+  cool_yylval.symbol = stringtable.add_string(string_buf_ptr, string_const_length);
+  string_const_length = 0;
+  BEGIN(INITIAL);
+  return STR_CONST;
+} 
+<STRING><<EOF>> {
+  cool_yylval.error_msg = "EOF in string constant";
+  BEGIN(TERMINATE);
+  return ERROR;
+}
+<STRING>"\\"[^\0] {
+  if (string_const_length + 1 < MAX_STR_CONST ) {
+    string_buf[string_const_length++] = get_string_special_char(yytext[1]);
+  } else {
+    cool_yylval.error_msg = "String constant too long";
+    string_const_length = 0;
+    BEGIN(ESCAPE);
+    return ERROR; 
+  }
+}
+<STRING>. {
+  if (string_const_length + 1 < MAX_STR_CONST ) {
+    string_buf[string_const_length++] = yytext[0];
+  } else {
+    cool_yylval.error_msg = "String constant too long";
+    string_const_length = 0;
+    BEGIN(ESCAPE);
+    return ERROR; 
+  }
+}
+
+<ESCAPE>[\n|STRING_END] { BEGIN(INITIAL); }
+<ESCAPE>[^\n] {}
+
+<TERMINATE>. { yyterminate(); }
 
 \n { curr_lineno++; }
 {WHITE_SPACE} {}
