@@ -53,19 +53,130 @@ extern YYSTYPE cool_yylval;
  * Define names for regular expressions here.
  */
 
-DARROW          =>
+/*
+ * 10.1 Integers, Identifiers, and Special Notation
+ */
+DIGIT                   [0-9]
+LOWERCASE_LETTER        [a-z]
+UPPERCASE_LETTER        [A-Z]
+LETTER                  ({LOWERCASE_LETTER}|{UPPERCASE_LETTER})
+INTEGER                 {DIGIT}+
+TYPE_IDENTIFIER         ("SELF_TYPE"|{UPPERCASE_LETTER}({LETTER}|{DIGIT}|"_")*)
+OBJECT_IDENTIFIER       ("self"|{LETTER}({LETTER}|{DIGIT}|"_")*)
+SINGLE_CHAR_OPERATOR    ("+"|"/"|"-"|"*"|"="|"<"|"."|"~"|","|";"|":"|"("|")"|"@"|"{"|"}")
+ASSIGN                  "<-"
+DARROW                  "=>"
+LE                      "<="
+
+/*
+ * 10.2 Strings
+ */
+STRING_START    "\""
+STRING_END      "\""
+
+/*
+ * 10.3 Comments
+ */
+ONE_LINE_COMMENT_START         "--"
+ONE_LINE_COMMENT_END           "--"
+MULTIPLE_LINE_COMMENT_START    "\(\*"
+MULTIPLE_LINE_COMMENT_END      "\*\)"
+
+/*
+ * 10.4 Keywords are case insensitive, expect for the constants true and false
+ */
+CLASS       (?i:class)
+ELSE        (?i:else)
+FI          (?i:fi)
+IF          (?i:if)
+IN          (?i:in)
+INHERITS    (?i:inherits)
+ISVOID      (?i:isvoid)
+LET         (?i:let)
+LOOP        (?i:loop)
+POOL        (?i:pool)
+THEN        (?i:then)
+WHILE       (?i:while)
+CASE        (?i:case)
+ESAC        (?i:esac)
+NEW         (?i:new)
+OF          (?i:of)
+NOT         (?i:not)
+
+BOOL_CONST_TRUE     (t)(?i:rue)
+BOOL_CONST_FALSE    (f)(?i:alse)
+
+/*
+ * 10.5 White Space
+ */
+WHITE_SPACE    (" "|\f|\r|\t|\v)
 
 %%
+
+ /*
+  *  The keywords.
+  */
+{CLASS} { return CLASS; }
+{ELSE} { return ELSE; }
+{FI} { return FI; }
+{IF} { return IF; }
+{IN} { return IN; }
+{INHERITS} { return INHERITS; }
+{ISVOID} { return ISVOID; }
+{LET} { return LET; }
+{LOOP} { return LOOP; }
+{POOL} { return POOL; }
+{THEN} { return THEN; }
+{WHILE} { return WHILE; }
+{CASE} { return CASE; }
+{ESAC} { return ESAC; }
+{NEW} { return NEW; }
+{OF} { return OF; }
+{NOT} { return NOT; }
+
+ /*
+  *  The multiple-character operators.
+  */
+{ASSIGN} { return ASSIGN; }
+{DARROW} { return DARROW; }
+{LE} { return LE; }
+
+ /*
+  *  The single-character operators.
+  */
+{SINGLE_CHAR_OPERATOR} { return yytext[0]; }
+
+
+{INTEGER} {
+  cool_yylval.symbol = inttable.add_string(yytext);
+  return INT_CONST;
+}
+
+{TYPE_IDENTIFIER} {
+  cool_yylval.symbol = idtable.add_string(yytext);
+  return TYPEID;
+}
+
+{OBJECT_IDENTIFIER} {
+  cool_yylval.symbol = idtable.add_string(yytext);
+  return OBJECTID;
+}
+
+{BOOL_CONST_TRUE} {
+  cool_yylval.boolean = true;
+  return BOOL_CONST;
+}
+{BOOL_CONST_FALSE} {
+  cool_yylval.boolean = false;
+  return BOOL_CONST;
+}
 
  /*
   *  Nested comments
   */
 
 
- /*
-  *  The multiple-character operators.
-  */
-{DARROW}		{ return (DARROW); }
+
 
  /*
   * Keywords are case-insensitive except for the values true and false,
@@ -80,5 +191,7 @@ DARROW          =>
   *
   */
 
+\n { curr_lineno++; }
+{WHITE_SPACE} {}
 
 %%
