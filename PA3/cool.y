@@ -23,7 +23,7 @@
       
       
       #define YYLLOC_DEFAULT(Current, Rhs, N)         \
-      Current = Rhs[1];                             \
+      Current = Rhs[N];                             \
       node_lineno = Current;
     
     
@@ -183,12 +183,10 @@
     class_list: 
       single_class
         { 
-          @$ = @1;
           $$ = single_Classes($1); 
         }
     | class_list single_class
         { 
-          @$ = @2;
           $$ = append_Classes($1, single_Classes($2));  
         }
     ;
@@ -197,12 +195,10 @@
     single_class: 
       CLASS TYPEID '{' feature_list '}' ';'
         { 
-          @$ = @6;
           $$ = class_($2, idtable.add_string("Object"), $4, stringtable.add_string(curr_filename));  
         }
     | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
         { 
-          @$ = @8;
           $$ = class_($2, $4, $6, stringtable.add_string(curr_filename));  
         }
     | error ';' 
@@ -219,12 +215,10 @@
         }
     | single_feature
         {
-          @$ = @1;
           $$ = single_Features($1); 
         }
     | feature_list single_feature
         {
-          @$ = @2;
           $$ = append_Features($1, single_Features($2)); 
         }
     ;
@@ -232,12 +226,10 @@
     single_feature:
       attr
         {
-          @$ = @1;
           $$ = $1; 
         }
     | method
         {
-          @$ = @1;
           $$ = $1; 
         }
     | error ';' 
@@ -249,12 +241,10 @@
     attr:
       OBJECTID ':' TYPEID ';'
         {
-          @$ = @4;
           $$ = attr($1, $3, no_expr());
         }
     | OBJECTID ':' TYPEID ASSIGN expr ';'
         {
-          @$ = @6;
           $$ = attr($1, $3, $5);
         }
     ;
@@ -262,7 +252,6 @@
     method:
       OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';'
         {
-          @$ = @10;
           $$ = method($1, $3, $6, $8);
         }
     ;
@@ -275,12 +264,10 @@
         }
     | single_formal
         {
-          @$ = @1;
           $$ = single_Formals($1); 
         }
     | formal_list ',' single_formal
         {
-          @$ = @3;
           $$ = append_Formals($1, single_Formals($3)); 
         }
     ;
@@ -288,7 +275,6 @@
     single_formal:
       OBJECTID ':' TYPEID
         {
-          @$ = @3;
           $$ = formal($1, $3); 
         }
     ;
@@ -297,173 +283,141 @@
     /* Assignment */
       OBJECTID ASSIGN expr
         {
-          @$ = @3;
           $$ = assign($1, $3);
         }
     /* Dispatch */
     | expr '.' OBJECTID '(' ')'
         {
-          @$ = @5;
           $$ = dispatch($1, $3, nil_Expressions());
         }
     | expr '.' OBJECTID '(' expr ')'
         {
-          @$ = @6;
           $$ = dispatch($1, $3, single_Expressions($5));
         }
     | expr '.' OBJECTID '(' expr rest_expr ')'
         {
-          @$ = @7;
           $$ = dispatch($1, $3, append_Expressions(single_Expressions($5), $6));
         }
     | expr '@' TYPEID '.' OBJECTID '(' ')'
         {
-          @$ = @7;
           $$ = static_dispatch($1, $3, $5, nil_Expressions());
         }
     | expr '@' TYPEID '.' OBJECTID '(' expr ')'
         {
-          @$ = @8;
           $$ = static_dispatch($1, $3, $5, single_Expressions($7));
         }
     | expr '@' TYPEID '.' OBJECTID '(' expr rest_expr ')'
         {
-          @$ = @9;
           $$ = static_dispatch($1, $3, $5, append_Expressions(single_Expressions($7), $8));
         }
     | OBJECTID '(' ')'
         {
-          @$ = @3;
           $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions());
         }
     | OBJECTID '(' expr ')'
         {
-          @$ = @4;
           $$ = dispatch(object(idtable.add_string("self")), $1, single_Expressions($3));
         }
     | OBJECTID '(' expr rest_expr ')'
         {
-          @$ = @5;
           $$ = dispatch(object(idtable.add_string("self")), $1, append_Expressions(single_Expressions($3), $4));
         }
     /* Conditionals */
     | IF expr THEN expr ELSE expr FI
         {
-          @$ = @7;
           $$ = cond($2, $4, $6);
         }
     /* Identifiers */
     | OBJECTID
         {
-          @$ = @1;
           $$ = object($1);
         }
     /* Loops */
     | WHILE expr LOOP expr POOL
         {
-          @$ = @5;
           $$ = loop($2, $4);
         }
     /* Blocks */
     | '{' block_expr '}'
         {
-          @$ = @3;
           $$ = block($2);
         }
     /* Let */
     | LET let_expr
         {
-          @$ = @2;
           $$ = $2;
         }
     /* Case */
     | CASE expr OF branch_list ESAC
         {
-          @$ = @5;
           $$ = typcase($2, $4);
         }
     /* New */
     | NEW TYPEID
       {
-        @$ = @2;
         $$ = new_($2);
       }
     /* Isvoid */
     | ISVOID expr
       {
-        @$ = @2;
         $$ = isvoid($2);
       }
     /* Arithmetic and Comparsion Operations */
     | expr '+' expr
       {
-        @$ = @3;
         $$ = plus($1, $3);
       }
     | expr '-' expr
       {
-        @$ = @3;
         $$ = sub($1, $3);
       }
     | expr '*' expr
       {
-        @$ = @3;
         $$ = mul($1, $3);
       }
     | expr '/' expr
       {
-        @$ = @3;
         $$ = divide($1, $3);
       }
     | '~' expr
       {
-        @$ = @2;
         $$ = neg($2);
       }
     | expr '<' expr
       {
-        @$ = @3;
         $$ = lt($1, $3);
       }
     | expr LE expr
       {
-        @$ = @3;
         $$ = leq($1, $3);
       }
     | expr '=' expr
       {
-        @$ = @3;
         $$ = eq($1, $3);
       }
     | NOT expr
       {
-        @$ = @2;
         $$ = comp($2);
       }
     | '(' expr ')'
       {
-        @$ = @3;
         $$ = $2;
       }
     | OBJECTID
       {
-        @$ = @1;
         $$ = object($1);
       }
     /* Constants */
     | INT_CONST
         {
-          @$ = @1;
           $$ = int_const($1);
         }
     | STR_CONST
         {
-          @$ = @1;
           $$ = string_const($1);
         }
     | BOOL_CONST
         {
-          @$ = @1;
           $$ = bool_const($1);
         }
     ;
@@ -471,12 +425,10 @@
     rest_expr:
       ',' expr
         {
-          @$ = @2;
           $$ = single_Expressions($2);
         }
     | rest_expr ',' expr
         {
-          @$ = @3;
           $$ = append_Expressions($1, single_Expressions($3));
         }
     ;
@@ -484,12 +436,10 @@
     block_expr:
       expr ';'
         {
-          @$ = @2;
           $$ = single_Expressions($1);
         }
     | block_expr expr ';'
         {
-          @$ = @3;
           $$ = append_Expressions($1, single_Expressions($2));
         }
     | error ';' 
@@ -501,12 +451,10 @@
     let_expr:
       OBJECTID ':' TYPEID let_assign IN expr
         {
-          @$ = @6;
           $$ = let($1, $3, $4, $6);
         }
     | OBJECTID ':' TYPEID let_assign ',' let_expr
         {
-          @$ = @6;
           $$ = let($1, $3, $4, $6);
         }
     | error ','
@@ -528,7 +476,6 @@
         }
     | ASSIGN expr
         {
-          @$ = @2;
           $$ = $2;
         }
     ;
@@ -536,12 +483,10 @@
     branch_list:
       single_branch
         {
-          @$ = @1;
           $$ = single_Cases($1);
         }
     | branch_list single_branch
         {
-          @$ = @2;
           $$ = append_Cases($1, single_Cases($2));
         }
     ;
@@ -549,7 +494,6 @@
     single_branch:
       OBJECTID ':' TYPEID DARROW expr ';'
         {
-          @$ = @6;
           $$ = branch($1, $3, $5);
         }
     ;

@@ -1,17 +1,23 @@
-# PA2
+# Compilers
+
+[StanfordOnline SOE.YCSCS1 - Compilers](https://learning.edx.org/course/course-v1:StanfordOnline+SOE.YCSCS1+3T2020/home)
+
+## PA2
 
 Grading: 63/63
 
 [cool.flex](PA2/cool.flex) 
 
-## Resource
+### Resource
 
 - [Lexical Analysis With Flex, for Flex 2.6.2](https://westes.github.io/flex/manual/)
 
-# PA3
+## PA3
+
+Grading: 70/70
 
 [cool.y](PA3/cool.y)
 
-## Resource
+### Resource
 
-- [Bison 3.8.1](https://www.gnu.org/software/bison/manual/bison.html)
+- [Bison 2.4.1](https://www.cin.ufpe.br/~frsn/arquivos/GnuWin32/doc/bison/2.4.1/bison-2.4.1/bison.html#Location-Default-Action)
