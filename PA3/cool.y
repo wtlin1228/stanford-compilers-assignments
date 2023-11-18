@@ -144,9 +144,29 @@
     %type <formal> single_formal
     
     %type <expression> expr
+    %type <expressions> rest_expr
+    %type <expressions> block_expr
+    %type <expression> let_expr
+    %type <expression> let_assign
+
+    %type <cases> branch_list
+    %type <case_> single_branch
     
     /* Precedence declarations go here. */
-    
+
+    /* 
+    See Bison Manual(2.4.1) 3.7.3 Operator Precedence for the usage of %right, %left, %nonassoc.
+    See Cool Manual 11.1 Precedence for the priority table.
+    */
+    %right ASSIGN
+    %left NOT
+    %nonassoc '<' '=' LE
+    %left '+' '-'
+    %left '*' '/'
+    %left ISVOID
+    %left '~'
+    %left '@'
+    %left '.'
     
     %%
     /* 
@@ -155,17 +175,20 @@
     program: 
       class_list	
         { 
-          @$ = @1; ast_root = program($1); 
+          @$ = @1; 
+          ast_root = program($1); 
         }
     ;
     
     class_list: 
       single_class
         { 
+          @$ = @1;
           $$ = single_Classes($1); 
         }
     | class_list single_class
         { 
+          @$ = @2;
           $$ = append_Classes($1, single_Classes($2));  
         }
     ;
@@ -174,21 +197,17 @@
     single_class: 
       CLASS TYPEID '{' feature_list '}' ';'
         { 
-          $$ = class_(
-            $2,
-            idtable.add_string("Object"),
-            $4,
-            stringtable.add_string(curr_filename)
-          );  
+          @$ = @6;
+          $$ = class_($2, idtable.add_string("Object"), $4, stringtable.add_string(curr_filename));  
         }
     | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
         { 
-          $$ = class_(
-            $2,
-            $4,
-            $6,
-            stringtable.add_string(curr_filename)
-          );  
+          @$ = @8;
+          $$ = class_($2, $4, $6, stringtable.add_string(curr_filename));  
+        }
+    | error ';' 
+        { 
+          /* just catch the error */
         }
     ;
     
@@ -200,10 +219,12 @@
         }
     | single_feature
         {
+          @$ = @1;
           $$ = single_Features($1); 
         }
     | feature_list single_feature
         {
+          @$ = @2;
           $$ = append_Features($1, single_Features($2)); 
         }
     ;
@@ -211,21 +232,29 @@
     single_feature:
       attr
         {
+          @$ = @1;
           $$ = $1; 
         }
     | method
         {
+          @$ = @1;
           $$ = $1; 
+        }
+    | error ';' 
+        { 
+          /* just catch the error */
         }
     ;
 
     attr:
       OBJECTID ':' TYPEID ';'
         {
+          @$ = @4;
           $$ = attr($1, $3, no_expr());
         }
     | OBJECTID ':' TYPEID ASSIGN expr ';'
         {
+          @$ = @6;
           $$ = attr($1, $3, $5);
         }
     ;
@@ -233,6 +262,7 @@
     method:
       OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';'
         {
+          @$ = @10;
           $$ = method($1, $3, $6, $8);
         }
     ;
@@ -245,10 +275,12 @@
         }
     | single_formal
         {
+          @$ = @1;
           $$ = single_Formals($1); 
         }
     | formal_list ',' single_formal
         {
+          @$ = @3;
           $$ = append_Formals($1, single_Formals($3)); 
         }
     ;
@@ -256,16 +288,272 @@
     single_formal:
       OBJECTID ':' TYPEID
         {
+          @$ = @3;
           $$ = formal($1, $3); 
         }
     ;
 
     expr:
+    /* Assignment */
+      OBJECTID ASSIGN expr
+        {
+          @$ = @3;
+          $$ = assign($1, $3);
+        }
+    /* Dispatch */
+    | expr '.' OBJECTID '(' ')'
+        {
+          @$ = @5;
+          $$ = dispatch($1, $3, nil_Expressions());
+        }
+    | expr '.' OBJECTID '(' expr ')'
+        {
+          @$ = @6;
+          $$ = dispatch($1, $3, single_Expressions($5));
+        }
+    | expr '.' OBJECTID '(' expr rest_expr ')'
+        {
+          @$ = @7;
+          $$ = dispatch($1, $3, append_Expressions(single_Expressions($5), $6));
+        }
+    | expr '@' TYPEID '.' OBJECTID '(' ')'
+        {
+          @$ = @7;
+          $$ = static_dispatch($1, $3, $5, nil_Expressions());
+        }
+    | expr '@' TYPEID '.' OBJECTID '(' expr ')'
+        {
+          @$ = @8;
+          $$ = static_dispatch($1, $3, $5, single_Expressions($7));
+        }
+    | expr '@' TYPEID '.' OBJECTID '(' expr rest_expr ')'
+        {
+          @$ = @9;
+          $$ = static_dispatch($1, $3, $5, append_Expressions(single_Expressions($7), $8));
+        }
+    | OBJECTID '(' ')'
+        {
+          @$ = @3;
+          $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions());
+        }
+    | OBJECTID '(' expr ')'
+        {
+          @$ = @4;
+          $$ = dispatch(object(idtable.add_string("self")), $1, single_Expressions($3));
+        }
+    | OBJECTID '(' expr rest_expr ')'
+        {
+          @$ = @5;
+          $$ = dispatch(object(idtable.add_string("self")), $1, append_Expressions(single_Expressions($3), $4));
+        }
+    /* Conditionals */
+    | IF expr THEN expr ELSE expr FI
+        {
+          @$ = @7;
+          $$ = cond($2, $4, $6);
+        }
+    /* Identifiers */
+    | OBJECTID
+        {
+          @$ = @1;
+          $$ = object($1);
+        }
+    /* Loops */
+    | WHILE expr LOOP expr POOL
+        {
+          @$ = @5;
+          $$ = loop($2, $4);
+        }
+    /* Blocks */
+    | '{' block_expr '}'
+        {
+          @$ = @3;
+          $$ = block($2);
+        }
+    /* Let */
+    | LET let_expr
+        {
+          @$ = @2;
+          $$ = $2;
+        }
+    /* Case */
+    | CASE expr OF branch_list ESAC
+        {
+          @$ = @5;
+          $$ = typcase($2, $4);
+        }
+    /* New */
+    | NEW TYPEID
       {
-        $$ = no_expr(); 
+        @$ = @2;
+        $$ = new_($2);
       }
+    /* Isvoid */
+    | ISVOID expr
+      {
+        @$ = @2;
+        $$ = isvoid($2);
+      }
+    /* Arithmetic and Comparsion Operations */
+    | expr '+' expr
+      {
+        @$ = @3;
+        $$ = plus($1, $3);
+      }
+    | expr '-' expr
+      {
+        @$ = @3;
+        $$ = sub($1, $3);
+      }
+    | expr '*' expr
+      {
+        @$ = @3;
+        $$ = mul($1, $3);
+      }
+    | expr '/' expr
+      {
+        @$ = @3;
+        $$ = divide($1, $3);
+      }
+    | '~' expr
+      {
+        @$ = @2;
+        $$ = neg($2);
+      }
+    | expr '<' expr
+      {
+        @$ = @3;
+        $$ = lt($1, $3);
+      }
+    | expr LE expr
+      {
+        @$ = @3;
+        $$ = leq($1, $3);
+      }
+    | expr '=' expr
+      {
+        @$ = @3;
+        $$ = eq($1, $3);
+      }
+    | NOT expr
+      {
+        @$ = @2;
+        $$ = comp($2);
+      }
+    | '(' expr ')'
+      {
+        @$ = @3;
+        $$ = $2;
+      }
+    | OBJECTID
+      {
+        @$ = @1;
+        $$ = object($1);
+      }
+    /* Constants */
+    | INT_CONST
+        {
+          @$ = @1;
+          $$ = int_const($1);
+        }
+    | STR_CONST
+        {
+          @$ = @1;
+          $$ = string_const($1);
+        }
+    | BOOL_CONST
+        {
+          @$ = @1;
+          $$ = bool_const($1);
+        }
+    ;
+
+    rest_expr:
+      ',' expr
+        {
+          @$ = @2;
+          $$ = single_Expressions($2);
+        }
+    | rest_expr ',' expr
+        {
+          @$ = @3;
+          $$ = append_Expressions($1, single_Expressions($3));
+        }
     ;
     
+    block_expr:
+      expr ';'
+        {
+          @$ = @2;
+          $$ = single_Expressions($1);
+        }
+    | block_expr expr ';'
+        {
+          @$ = @3;
+          $$ = append_Expressions($1, single_Expressions($2));
+        }
+    | error ';' 
+        { 
+          /* just catch the error */
+        }
+    ;
+
+    let_expr:
+      OBJECTID ':' TYPEID let_assign IN expr
+        {
+          @$ = @6;
+          $$ = let($1, $3, $4, $6);
+        }
+    | OBJECTID ':' TYPEID let_assign ',' let_expr
+        {
+          @$ = @6;
+          $$ = let($1, $3, $4, $6);
+        }
+    | error ','
+        { 
+          /* 
+          Bison Manual(2.4.1) 6 Error Recovery
+          You can make error messages resume immediately by using the macro yyerrok in an action. 
+          If you do this in the error rule's action, no error messages will be suppressed. 
+          This macro requires no arguments; yyerrok; is a valid C statement.
+          */
+          yyerrok;
+        }
+    ;
+
+    let_assign:
+      /* empty */
+        {
+          $$ = no_expr();
+        }
+    | ASSIGN expr
+        {
+          @$ = @2;
+          $$ = $2;
+        }
+    ;
+
+    branch_list:
+      single_branch
+        {
+          @$ = @1;
+          $$ = single_Cases($1);
+        }
+    | branch_list single_branch
+        {
+          @$ = @2;
+          $$ = append_Cases($1, single_Cases($2));
+        }
+    ;
+
+    single_branch:
+      OBJECTID ':' TYPEID DARROW expr ';'
+        {
+          @$ = @6;
+          $$ = branch($1, $3, $5);
+        }
+    ;
+
     /* end of grammar */
     %%
     
