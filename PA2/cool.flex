@@ -78,7 +78,7 @@ UPPERCASE_LETTER        [A-Z]
 LETTER                  ({LOWERCASE_LETTER}|{UPPERCASE_LETTER})
 INTEGER                 {DIGIT}+
 TYPE_IDENTIFIER         ("SELF_TYPE"|{UPPERCASE_LETTER}({LETTER}|{DIGIT}|"_")*)
-OBJECT_IDENTIFIER       ("self"|{LETTER}({LETTER}|{DIGIT}|"_")*)
+OBJECT_IDENTIFIER       ("self"|{LOWERCASE_LETTER}({LETTER}|{DIGIT}|"_")*)
 SINGLE_CHAR_OPERATOR    ("+"|"/"|"-"|"*"|"="|"<"|"."|"~"|","|";"|":"|"("|")"|"@"|"{"|"}")
 ASSIGN                  "<-"
 DARROW                  "=>"
