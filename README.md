@@ -17,7 +17,6 @@ Grading: 63/63
 
 ### Resource
 
-- 
 - [Lexical Analysis With Flex, for Flex 2.6.2](https://westes.github.io/flex/manual/)
 
 ## PA3 - Parser
@@ -28,5 +27,4 @@ Grading: 70/70
 
 ### Resource
 
-- 
 - [Bison 2.4.1](https://www.cin.ufpe.br/~frsn/arquivos/GnuWin32/doc/bison/2.4.1/bison-2.4.1/bison.html#Location-Default-Action)
