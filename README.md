@@ -2,7 +2,7 @@
 
 Grading: 63/63
 
-[cool.flex](assignments/PA2/cool.flex) 
+[cool.flex](PA2/cool.flex) 
 
 ## Resource
 
@@ -10,7 +10,7 @@ Grading: 63/63
 
 # PA3
 
-[cool.y](assignments/PA3/cool.y)
+[cool.y](PA3/cool.y)
 
 ## Resource
 
