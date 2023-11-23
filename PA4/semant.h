@@ -2,7 +2,8 @@
 #define SEMANT_H_
 
 #include <assert.h>
-#include <iostream>  
+#include <iostream>
+#include <map>  
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "symtab.h"
@@ -24,6 +25,8 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
+  std::map<Symbol, Class_> class_map;
+  std::map<Symbol, Symbol> inheritance_graph;
 
 public:
   ClassTable(Classes);
@@ -31,6 +34,8 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  void add_class(Class_ c);
+  void check_inheritance_graph();
 };
 
 

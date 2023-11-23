@@ -81,12 +81,13 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
-
-
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
-
-    /* Fill this in */
-
+    this->install_basic_classes();
+    
+    // use the simple iterator of list_node to iterate through classes
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        this->add_class(classes->nth(i));
+    }
 }
 
 void ClassTable::install_basic_classes() {
@@ -122,6 +123,8 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 	       filename);
+    
+    this->add_class(Object_class);
 
     // 
     // The IO class inherits from Object. Its methods are
@@ -143,6 +146,7 @@ void ClassTable::install_basic_classes() {
 					       single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 			       single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 	       filename);  
+    this->add_class(IO_class);
 
     //
     // The Int class has no methods and only a single attribute, the
@@ -153,12 +157,14 @@ void ClassTable::install_basic_classes() {
 	       Object,
 	       single_Features(attr(val, prim_slot, no_expr())),
 	       filename);
+    this->add_class(Int_class);
 
     //
     // Bool also has only the "val" slot.
     //
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
+    this->add_class(Int_class);
 
     //
     // The class Str has a number of slots and operations:
@@ -188,6 +194,7 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
+    this->add_class(Str_class);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -222,7 +229,38 @@ ostream& ClassTable::semant_error()
     return error_stream;
 } 
 
+void ClassTable::add_class(Class_ c) {
+    // see cool-tree.handcode for the extras methods
+    Symbol name = c->get_name();
+    Symbol parent = c->get_parent();
 
+    // error handling
+    if (class_map.count(name) == 1) {
+        this->semant_error(c) << "Class " << name << " has already been defined.\n";
+        return;
+    }
+    if (parent == Bool || parent == SELF_TYPE || parent == Str) {
+        this->semant_error(c) << "Class " << name << " cannot inherit class " << parent << ".\n";
+        return;
+    }
+    if (name == SELF_TYPE) {
+        this->semant_error(c) << "Redefinition of " << name << " is not allowed.\n";
+        return;
+    }
+    
+    // it's a valid class
+    this->class_map[name] = c;
+    this->inheritance_graph[name] = parent;
+}
+
+void ClassTable::check_inheritance_graph() {
+    // TODO: not implemented
+}
+
+void raise_error() {
+    cerr << "Compilation halted due to static semantic errors." << endl;
+    exit(1);
+}
 
 /*   This is the entry point to the semantic checker.
 
@@ -241,14 +279,29 @@ void program_class::semant()
 {
     initialize_constants();
 
-    /* ClassTable constructor may do some semantic analysis */
+    // 1. Look at all classes and build an inheritance graph.
     ClassTable *classtable = new ClassTable(classes);
-
-    /* some semantic analysis code may go here */
-
     if (classtable->errors()) {
-	cerr << "Compilation halted due to static semantic errors." << endl;
-	exit(1);
+        raise_error();
+    }
+    
+    // 2. Check that the graph is well-formed.
+    classtable->check_inheritance_graph();
+    if (classtable->errors()) {
+        raise_error();
+    }
+
+    /*
+     * 3. For each class
+     *    (a) Traverse the AST, gathering all visible declarations in a symbol table.
+     *    (b) Check each expression for type correctness.
+     *    (c) Annotate the AST with types.
+     */
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        // TODO: handle scope & type check
+    }
+    if (classtable->errors()) {
+        raise_error();
     }
 }
 
