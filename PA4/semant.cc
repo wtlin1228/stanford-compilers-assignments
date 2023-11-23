@@ -230,7 +230,6 @@ ostream& ClassTable::semant_error()
 } 
 
 void ClassTable::add_class(Class_ c) {
-    // see cool-tree.handcode for the extras methods
     Symbol name = c->get_name();
     Symbol parent = c->get_parent();
 
