@@ -28,3 +28,16 @@ Grading: 70/70
 ### Resource
 
 - [Bison 2.4.1](https://www.cin.ufpe.br/~frsn/arquivos/GnuWin32/doc/bison/2.4.1/bison-2.4.1/bison.html#Location-Default-Action)
+- [The Cool Reference Manual, Chapter 12, Figure 1: Cool syntax](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
+
+## PA4 - Semantic Analyzer
+
+Grading: WIP
+
+[cool-tree.h](PA4/cool-tree.h)
+[semant.cc](PA4/semant.cc)
+[semant.h](PA4/semant.h)
+
+### Resource
+
+- [The Cool Reference Manual, Chapter 12.1, Type Environments](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
