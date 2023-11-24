@@ -258,6 +258,9 @@ void ClassTable::add_class(Class_ c) {
     this->inheritance_graph[name] = parent;
 }
 
+/*
+ * `is_main_class_defined` returns true if Main class is defined.
+ */
 bool ClassTable::is_main_class_defined() {
     if (this->class_map.count(Main) == 0) {
         this->semant_error() << "Class Main is not defined.\n";
@@ -266,6 +269,13 @@ bool ClassTable::is_main_class_defined() {
     return true;
 }
 
+/*
+ * `are_all_parent_classes_defined` returns true if all classes inherited 
+ * are defined.
+ * 
+ * Time complexity: O(n), where n is the size of class list
+ * Space complexity: O(n), where n is the size of class list
+ */
 bool ClassTable::are_all_parent_classes_defined() {
     for (
         std::map<Symbol, Symbol>::iterator it = this->inheritance_graph.begin(); 
@@ -289,8 +299,12 @@ bool ClassTable::are_all_parent_classes_defined() {
     return true;
 }
 
-// time complexity: O(n), where n is the size of class list
-// space complexity: O(n), where n is the size of class list
+/*
+ * `is_acyclic` returns true if the inheritance graph has no cycles.
+ * 
+ * Time complexity: O(n), where n is the size of class list
+ * Space complexity: O(n), where n is the size of class list
+ */
 bool ClassTable::is_acyclic() {
     // Each Symbol in the visited_classes has no cycles
     std::set<Symbol> visited_classes;
@@ -337,6 +351,26 @@ bool ClassTable::is_acyclic() {
     return true;
 }
 
+/*
+ * `init_inheritance_level_map` initializes `inheritance_level_map`.
+ * 
+ * Time complexity: O(n), where n is the size of class list
+ * Space complexity: O(n), where n is the size of class list
+ */
+void ClassTable::init_inheritance_level_map() {
+    // TODO: Not implemented
+}
+
+/*
+ * `lub` returns the least upper bound for two classes.
+ * 
+ * time complexity: O(l), where l is the longest inheritance chain
+ * space complexity: O(1)
+ */
+Symbol ClassTable::lub(Symbol c1, Symbol c2) {
+    // TODO: Not implemented
+}
+
 void raise_error() {
     cerr << "Compilation halted due to static semantic errors." << endl;
     exit(1);
@@ -362,6 +396,7 @@ void program_class::semant()
     // 1. Look at all classes and build an inheritance graph.
     ClassTable *classtable = new ClassTable(classes);
     
+    // 2. Check that graph is well-formed.
     if (
         classtable->errors() ||
         !classtable->is_main_class_defined() ||
@@ -370,6 +405,8 @@ void program_class::semant()
     ) {
         raise_error();
     }
+
+    classtable->init_inheritance_level_map();
 
     /*
      * 3. For each class
