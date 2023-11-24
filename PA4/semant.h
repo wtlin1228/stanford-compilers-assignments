@@ -35,7 +35,9 @@ public:
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
   void add_class(Class_ c);
-  void check_inheritance_graph();
+  bool is_main_class_defined();
+  bool are_all_parent_classes_defined();
+  bool is_acyclic();
 };
 
 

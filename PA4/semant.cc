@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
+#include "set"
 
 
 extern int semant_debug;
@@ -164,7 +165,7 @@ void ClassTable::install_basic_classes() {
     //
     Class_ Bool_class =
 	class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
-    this->add_class(Int_class);
+    this->add_class(Bool_class);
 
     //
     // The class Str has a number of slots and operations:
@@ -238,7 +239,12 @@ void ClassTable::add_class(Class_ c) {
         this->semant_error(c) << "Class " << name << " has already been defined.\n";
         return;
     }
-    if (parent == Bool || parent == SELF_TYPE || parent == Str) {
+    if (
+        parent == Bool || 
+        parent == Int || 
+        parent == SELF_TYPE || 
+        parent == Str
+    ) {
         this->semant_error(c) << "Class " << name << " cannot inherit class " << parent << ".\n";
         return;
     }
@@ -252,8 +258,83 @@ void ClassTable::add_class(Class_ c) {
     this->inheritance_graph[name] = parent;
 }
 
-void ClassTable::check_inheritance_graph() {
-    // TODO: not implemented
+bool ClassTable::is_main_class_defined() {
+    if (this->class_map.count(Main) == 0) {
+        this->semant_error() << "Class Main is not defined.\n";
+        return false;
+    }
+    return true;
+}
+
+bool ClassTable::are_all_parent_classes_defined() {
+    for (
+        std::map<Symbol, Symbol>::iterator it = this->inheritance_graph.begin(); 
+        it != this->inheritance_graph.end(); 
+        ++it
+    ) {
+        Symbol child = it->first;
+        Symbol parent = it->second;
+        if (child == Object) {
+            continue;
+        }
+        if (this->class_map.count(parent) == 0) {
+            this->semant_error() << "Class "
+                << child
+                << " inherits from an undefined class "
+                << parent
+                << ".\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+// time complexity: O(n), where n is the size of class list
+// space complexity: O(n), where n is the size of class list
+bool ClassTable::is_acyclic() {
+    // Each Symbol in the visited_classes has no cycles
+    std::set<Symbol> visited_classes;
+    std::set<Symbol> path;
+    for (
+        std::map<Symbol, Symbol>::iterator it = this->inheritance_graph.begin(); 
+        it != this->inheritance_graph.end(); 
+        ++it
+    ) {
+        Symbol child = it->first;
+        Symbol parent = it->second;
+        if (visited_classes.count(child) != 0) {
+            // This class had been verified as no inheritance cycle
+            continue;
+        }
+        path.insert(child);
+        while (parent != No_class) {
+            if (visited_classes.count(parent) != 0) {
+                break;
+            }
+            if (path.count(parent) != 0) {
+                semant_error(this->class_map.at(child)) << "There exists a circular dependency for "
+                    << parent
+                    << " (the ancestor of "
+                    << child
+                    << ")"
+                    << ".\n";
+                return false;
+            }
+            path.insert(parent);
+            parent = this->inheritance_graph.at(parent);
+        }
+        // Mark the Symbols of the path as visited
+        for (
+            std::set<Symbol>::iterator it = path.begin(); 
+            it != path.end(); 
+            ++it
+        ) {
+            visited_classes.insert(*it);
+        }
+        // Reset path for next iteration
+        path.clear();
+    }
+    return true;
 }
 
 void raise_error() {
@@ -280,13 +361,13 @@ void program_class::semant()
 
     // 1. Look at all classes and build an inheritance graph.
     ClassTable *classtable = new ClassTable(classes);
-    if (classtable->errors()) {
-        raise_error();
-    }
     
-    // 2. Check that the graph is well-formed.
-    classtable->check_inheritance_graph();
-    if (classtable->errors()) {
+    if (
+        classtable->errors() ||
+        !classtable->is_main_class_defined() ||
+        !classtable->are_all_parent_classes_defined() ||
+        !classtable->is_acyclic()
+    ) {
         raise_error();
     }
 
