@@ -40,4 +40,4 @@ Grading: WIP
 
 ### Resource
 
-- [The Cool Reference Manual, Chapter 12.1, Type Environments](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
+- [The Cool Reference Manual, Chapter 12, Type Rules](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
