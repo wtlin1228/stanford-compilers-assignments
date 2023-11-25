@@ -75,3 +75,21 @@
    - Formal:
 
      Error message: Class {parameter_type} of formal parameter {parameter_name} is undefined.
+
+1. Multiple declarations.
+
+   - Formal:
+
+     Error message: Formal parameter {parameter_name} is multiply defined.
+
+1. Not allowed types.
+
+   - Formal:
+
+     Error message: Formal parameter {parameter_name} cannot have type SELF_TYPE.
+
+1. Type mismatch.
+
+   - Method:
+
+     Error message: Inferred return type {inferred_return_type} of method {method_name} does not conform to declared return type {method_return_type}.

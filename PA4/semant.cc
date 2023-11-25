@@ -462,7 +462,7 @@ void ClassTable::build_class_feature_map(Class_ c) {
             Symbol attr_name = attr->get_name();
             // Inherited attributes cannot be redefined.
             if (attr_map.count(attr_name) > 0) {
-                semant_error(c) << "Attribute "
+                this->semant_error(c) << "Attribute "
                     << attr_name
                     << " is an attribute of an inherited class.\n";
                 raise_error();
@@ -476,7 +476,7 @@ void ClassTable::build_class_feature_map(Class_ c) {
             if (method_map.count(method_name) > 0) {
                 method_class* original_method = method_map.at(method_name);
                 if (original_method->get_return_type() != method->get_return_type()) {
-                    semant_error(c) << "In redefined method "
+                    this->semant_error(c) << "In redefined method "
                         << method_name
                         << ", return type "
                         << method->get_return_type()
@@ -488,7 +488,7 @@ void ClassTable::build_class_feature_map(Class_ c) {
                 Formals original_method_formals = original_method->get_formals();
                 Formals method_formals = method->get_formals();
                 if (original_method_formals->len() != method_formals->len()) {
-                    semant_error(c) << "In redefined method "
+                    this->semant_error(c) << "In redefined method "
                         << method_name
                         << ", parameter length "
                         << method_formals->len() 
@@ -505,7 +505,7 @@ void ClassTable::build_class_feature_map(Class_ c) {
                     Formal original_formal = original_method_formals->nth(i);
                     Formal formal = method_formals->nth(i);
                     if (original_formal->get_type() != formal->get_type()) {
-                        semant_error(c) << "In redefined method "
+                        this->semant_error(c) << "In redefined method "
                             << method_name
                             << ", parameter type "
                             << formal->get_type() 
@@ -542,6 +542,10 @@ Feature method_class::type_check(TypeEnv type_env) {
     for (int i = this->formals->first(); this->formals->more(i); i = this->formals->next(i)) {
         this->formals->nth(i)->type_check(type_env);
     }
+    Symbol inferred_return_type = this->expr->type_check(type_env)->get_type();
+
+    // TODO: ensure inferred return type <= declared return type, which is
+    //       inferred return type is subtype of declared return type 
     
     type_env.object_env->exitscope();
     //////////////////////////////////////////////////////////////////
@@ -550,7 +554,27 @@ Feature method_class::type_check(TypeEnv type_env) {
     return this;
 }
 Feature attr_class::type_check(TypeEnv type_env) {}
-Formal formal_class::type_check(TypeEnv type_env) {}
+Formal formal_class::type_check(TypeEnv type_env) {
+    if (this->type_decl == SELF_TYPE) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Formal parameter " << this->name << " cannot have type SELF_TYPE.\n";
+    }
+    if (!type_env.class_table->has_class(this->type_decl)) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Class " << this->type_decl << " of formal parameter " << this->name << "is undefined.\n";
+    }
+    if (type_env.object_env->probe(this->name) != NULL) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Formal parameter " << this->name << " is multiply defined.\n";
+    } else {
+        Symbol type_decl = this->type_decl;
+        type_env.object_env->addid(this->name, &type_decl);
+    }
+    return this;
+}
 Symbol branch_class::type_check(TypeEnv type_env) {}
 Expression assign_class::type_check(TypeEnv type_env) {}
 Expression static_dispatch_class::type_check(TypeEnv type_env) {}
