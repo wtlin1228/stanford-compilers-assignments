@@ -559,24 +559,40 @@ void program_class::semant()
         raise_error();
     }
 
-    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        classtable->build_class_feature_map(classes->nth(i));
-    }
-
     classtable->build_inheritance_level_map();
 
     // 3. For each class
     //    (a) Traverse the AST, gathering all visible declarations in a symbol table.
     //    (b) Check each expression for type correctness.
     //    (c) Annotate the AST with types.
-    TypeEnv env;
-    env.object_method_env = new SymbolTable<Symbol, Symbol>();
-    env.class_table = classtable;
-    env.current_class = NULL;
+    
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        env.object_method_env->enterscope();
+        classtable->build_class_feature_map(classes->nth(i));
+    }
+
+    TypeEnv type_env;
+    type_env.object_env = new SymbolTable<Symbol, Symbol>();
+    type_env.class_table = classtable;
+    type_env.current_class = NULL;
+
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        Class_ current_class = classes->nth(i);
+        type_env.current_class = current_class;
         
-        env.object_method_env->exitscope();
+        type_env.object_env->enterscope();
+        // prepare the initial object environment
+        std::map<Symbol, attr_class*> attr_map = classtable->get_class_attr_map(current_class->get_name());
+        for (
+            std::map<Symbol, attr_class*>::iterator it = attr_map.begin(); 
+            it != attr_map.end(); 
+            ++it
+        ) {
+            Symbol type_decl = it->second->get_type();
+            type_env.object_env->addid(it->first, &type_decl);
+        }
+        // GO GO type check!
+        // current_class->type_check(type_env);
+        type_env.object_env->exitscope();
     }
 
     if (classtable->errors()) {

@@ -226,6 +226,7 @@ public:
    void dump(ostream& stream, int n);
    bool is_attr() { return true; }
    Symbol get_name() { return name; }
+   Symbol get_type() { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

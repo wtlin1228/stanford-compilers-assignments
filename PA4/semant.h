@@ -17,8 +17,10 @@ typedef ClassTable *ClassTableP;
 
 // Type environment <O, M, C> for type checking
 struct TypeEnv {
-  SymbolTable<Symbol, Symbol> *object_method_env;
-  ClassTable *class_table;
+  // handle scopes
+  SymbolTable<Symbol, Symbol> *object_env;
+  // ClassTable has method_table and attr_table
+  ClassTable *class_table; 
   Class_ current_class;
 };
 
@@ -114,6 +116,12 @@ public:
 
   // build class_method_map and class_attr_map
   void build_class_feature_map(Class_ c);
+  std::map<Symbol, attr_class*> get_class_attr_map(Symbol class_name) { 
+    return class_attr_map.at(class_name);
+  }
+  std::map<Symbol, method_class*> get_class_method_map(Symbol class_name) {
+    return class_method_map.at(class_name);
+  }
 };
 
 
