@@ -380,6 +380,18 @@ Symbol ClassTable::lub(Symbol c1, Symbol c2) {
     // TODO: Not implemented
 }
 
+/*
+ * `build_class_feature_map` initializes `class_attr_map` and `class_method_map`.
+ * 
+ * For building the feature map for a single class,
+ * time complexity: O(f' + f * o), where
+ *     f' is the feature length of it's parent
+ *     f is the feature length of this class
+ *     o is the largest formal length of the method of this class
+ * space complexity: O(f' + f), where
+ *     f' is the feature length of it's parent
+ *     f is the feature length of this class
+ */
 void ClassTable::build_class_feature_map(Class_ c) {
     Symbol class_name = c->get_name();
     Symbol parent = c->get_parent();
@@ -547,11 +559,11 @@ void program_class::semant()
         raise_error();
     }
 
-    classtable->build_inheritance_level_map();
-
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         classtable->build_class_feature_map(classes->nth(i));
     }
+
+    classtable->build_inheritance_level_map();
 
     // 3. For each class
     //    (a) Traverse the AST, gathering all visible declarations in a symbol table.
