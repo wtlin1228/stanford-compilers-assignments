@@ -263,10 +263,6 @@ void ClassTable::add_class(Class_ c) {
     this->inheritance_graph[name] = parent;
 }
 
-Class_ ClassTable::get_class(Symbol class_name) {
-    return this->class_map.at(class_name);
-}
-
 /*
  * `is_main_class_defined` returns true if Main class is defined.
  */
@@ -529,8 +525,23 @@ void ClassTable::build_class_feature_map(Class_ c) {
     return;
 }
 
-Class_ class__class::type_check(TypeEnv type_env) {}
-Feature method_class::type_check(TypeEnv type_env) {}
+Class_ class__class::type_check(TypeEnv type_env) {
+    // class ::= class TYPE [inherits TYPE] { [[feature;]]* }
+    for (int i = this->features->first(); this->features->more(i); i = this->features->next(i)) {
+        this->features->nth(i)->type_check(type_env);
+    }
+    return this;
+}
+Feature method_class::type_check(TypeEnv type_env) {
+    // method ::= ID( [ formal [[,formal]]* ] ) : TYPE { expr }
+    type_env.object_env->enterscope();
+    for (int i = this->formals->first(); this->formals->more(i); i = this->formals->next(i)) {
+        this->formals->nth(i)->type_check(type_env);
+    }
+    
+    type_env.object_env->exitscope();
+    return this;
+}
 Feature attr_class::type_check(TypeEnv type_env) {}
 Formal formal_class::type_check(TypeEnv type_env) {}
 Symbol branch_class::type_check(TypeEnv type_env) {}
@@ -605,6 +616,18 @@ void program_class::semant()
     type_env.class_table = classtable;
     type_env.current_class = NULL;
 
+    // All class types are valid types for the program.
+    type_env.object_env->enterscope();
+    std::map<Symbol, Class_> class_map = classtable->get_class_map();
+    for (
+        std::map<Symbol, Class_>::iterator it = class_map.begin(); 
+        it != class_map.end(); 
+        ++it
+    ) {
+        Symbol class_name = it->first;
+        type_env.object_env->addid(class_name, &class_name);
+    }    
+
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         Class_ current_class = classes->nth(i);
         type_env.current_class = current_class;
@@ -624,6 +647,7 @@ void program_class::semant()
         current_class->type_check(type_env);
         type_env.object_env->exitscope();
     }
+    type_env.object_env->exitscope();
 
     if (classtable->errors()) {
         raise_error();

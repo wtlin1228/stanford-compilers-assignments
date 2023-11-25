@@ -102,8 +102,10 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  
   void add_class(Class_ c);
-  Class_ get_class(Symbol class_name);
+  std::map<Symbol, Class_> get_class_map() { return class_map; }
+  Class_ get_class(Symbol class_name) { return class_map.at(class_name); }
   
   // for checking the graph is well-formed
   bool is_main_class_defined();

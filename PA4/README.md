@@ -69,3 +69,9 @@
      f(a: String): Int { 2 };
    };
    ```
+
+1. Type is undefined.
+
+   - Formal:
+
+     Error message: Class {parameter_type} of formal parameter {parameter_name} is undefined.
