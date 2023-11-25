@@ -15,6 +15,13 @@
 class ClassTable;
 typedef ClassTable *ClassTableP;
 
+// Type environment <O, M, C> for type checking
+struct TypeEnv {
+  SymbolTable<Symbol, Symbol> *object_method_env;
+  ClassTable *class_table;
+  Class_ current_class;
+};
+
 // This is a structure that may be used to contain the semantic
 // information such as the inheritance graph.  You may use it or not as
 // you like: it is only here to provide a container for the supplied
@@ -27,6 +34,7 @@ private:
   ostream& error_stream;
   std::map<Symbol, Class_> class_map;
   std::map<Symbol, Symbol> inheritance_graph;
+
   // inheritance_level_map will be used to find the lub (least upper bound)
   // level(Object) = 0
   // level(Str) = 1
@@ -36,6 +44,56 @@ private:
   // Note: should only be used after init_inheritance_level_map().
   std::map<Symbol, int> inheritance_level_map;
 
+  // For program:
+  //   Class X {
+  //     a: Int <- 1;
+  //     b: Int <- 2;
+  //     c: Int <- 3;
+  //   }
+  //   Class Y inherits X {
+  //     d: Int <- 4;
+  //   }
+  // The class_attr_map would be:
+  //   {
+  //     X: {
+  //       a: attr_class
+  //       b: attr_class
+  //       c: attr_class
+  //     } 
+  //     Y: {
+  //       a: attr_class
+  //       b: attr_class
+  //       c: attr_class
+  //       d: attr_class
+  //     }
+  //   }
+  std::map<
+    Symbol, 
+    std::map<Symbol, attr_class*>
+  > class_attr_map;
+  
+  // For program:
+  //   Class X {
+  //     a(): Int { 1 };
+  //   }
+  //   Class Y inherits X {
+  //     b(): Int { 1 };
+  //   }
+  // The class_method_map would be:
+  //   {
+  //     X: {
+  //       a: method_class
+  //     } 
+  //     Y: {
+  //       a: method_class
+  //       b: method_class
+  //     }
+  //   }
+  std::map<
+    Symbol,
+    std::map<Symbol, method_class*>
+  > class_method_map;
+
 public:
   ClassTable(Classes);
   int errors() { return semant_errors; }
@@ -43,11 +101,19 @@ public:
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
   void add_class(Class_ c);
+  Class_ get_class(Symbol class_name);
+  
+  // for checking the graph is well-formed
   bool is_main_class_defined();
   bool are_all_parent_classes_defined();
   bool is_acyclic();
-  void init_inheritance_level_map();
+  
+  // for least upper bound
+  void build_inheritance_level_map();
   Symbol lub(Symbol c1, Symbol c2);
+
+  // build class_method_map and class_attr_map
+  void build_class_feature_map(Class_ c);
 };
 
 

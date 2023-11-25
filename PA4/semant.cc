@@ -82,6 +82,11 @@ static void initialize_constants(void)
     val         = idtable.add_string("_val");
 }
 
+void raise_error() {
+    cerr << "Compilation halted due to static semantic errors." << endl;
+    exit(1);
+}
+
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
     this->install_basic_classes();
     
@@ -258,6 +263,10 @@ void ClassTable::add_class(Class_ c) {
     this->inheritance_graph[name] = parent;
 }
 
+Class_ ClassTable::get_class(Symbol class_name) {
+    return this->class_map.at(class_name);
+}
+
 /*
  * `is_main_class_defined` returns true if Main class is defined.
  */
@@ -352,12 +361,12 @@ bool ClassTable::is_acyclic() {
 }
 
 /*
- * `init_inheritance_level_map` initializes `inheritance_level_map`.
+ * `build_inheritance_level_map` initializes `inheritance_level_map`.
  * 
  * Time complexity: O(n), where n is the size of class list
  * Space complexity: O(n), where n is the size of class list
  */
-void ClassTable::init_inheritance_level_map() {
+void ClassTable::build_inheritance_level_map() {
     // TODO: Not implemented
 }
 
@@ -371,9 +380,141 @@ Symbol ClassTable::lub(Symbol c1, Symbol c2) {
     // TODO: Not implemented
 }
 
-void raise_error() {
-    cerr << "Compilation halted due to static semantic errors." << endl;
-    exit(1);
+void ClassTable::build_class_feature_map(Class_ c) {
+    Symbol class_name = c->get_name();
+    Symbol parent = c->get_parent();
+
+    // don't need to build the feature map for this class again
+    if (
+        this->class_method_map.count(class_name) > 0 && 
+        this->class_attr_map.count(class_name) > 0
+    ) {
+        return;
+    }
+
+    // Object is the root of the inheritance tree
+    if (class_name == Object) {
+        std::map<Symbol, attr_class*> attr_map;
+        std::map<Symbol, method_class*> method_map;
+        
+        Features class_features = c->get_features();
+        for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
+            Feature feature = class_features->nth(i);
+            if (feature->is_attr()) {
+                // std::cout << "this feature is a attribute" << std::endl;
+                attr_class* attr = static_cast<attr_class*>(feature);
+                attr_map[attr->get_name()] = attr;
+            } else {
+                // std::cout << "this feature is a method" << std::endl;
+                method_class* method = static_cast<method_class*>(feature);
+                method_map[method->get_name()] = method;
+            }
+        }
+
+        this->class_attr_map[class_name] = attr_map;
+        this->class_method_map[class_name] = method_map;
+        return;
+    }
+
+    // build the feature map for the greatest ancestor class first
+    if (
+        this->class_method_map.count(parent) == 0 ||
+        this->class_attr_map.count(parent) == 0
+    ) {
+        this->build_class_feature_map(this->class_map.at(parent));
+    }
+
+    std::map<Symbol, attr_class*> attr_map;
+    std::map<Symbol, method_class*> method_map;   
+
+    // copy the attributes and methods from its parent
+    std::map<Symbol, attr_class*> parent_attr_map = this->class_attr_map.at(parent);
+    for (
+        std::map<Symbol, attr_class*>::iterator it = parent_attr_map.begin(); 
+        it != parent_attr_map.end(); 
+        ++it
+    ) {
+        attr_map[it->first] = it->second;
+    }
+    std::map<Symbol, method_class*> parent_method_map = this->class_method_map.at(parent);
+    for (
+        std::map<Symbol, method_class*>::iterator it = parent_method_map.begin(); 
+        it != parent_method_map.end(); 
+        ++it
+    ) {
+        method_map[it->first] = it->second;
+    }
+
+    // add the attributes and methods belong to itself
+    Features class_features = c->get_features();
+    for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
+        Feature feature = class_features->nth(i);
+        if (feature->is_attr()) {
+            attr_class* attr = static_cast<attr_class*>(feature);
+            Symbol attr_name = attr->get_name();
+            // Inherited attributes cannot be redefined.
+            if (attr_map.count(attr_name) > 0) {
+                semant_error(c) << "Attribute "
+                    << attr_name
+                    << " is an attribute of an inherited class.\n";
+                raise_error();
+            }
+            attr_map[attr_name] = attr;
+        } else {
+            method_class* method = static_cast<method_class*>(feature);
+            Symbol method_name = method->get_name();
+            // Inherited methods must have exactly the same types for formal parameters 
+            // and the return type.
+            if (method_map.count(method_name) > 0) {
+                method_class* original_method = method_map.at(method_name);
+                if (original_method->get_return_type() != method->get_return_type()) {
+                    semant_error(c) << "In redefined method "
+                        << method_name
+                        << ", return type "
+                        << method->get_return_type()
+                        << " is different from original return type "
+                        << original_method->get_return_type()
+                        << ".\n";
+                    raise_error();
+                }
+                Formals original_method_formals = original_method->get_formals();
+                Formals method_formals = method->get_formals();
+                if (original_method_formals->len() != method_formals->len()) {
+                    semant_error(c) << "In redefined method "
+                        << method_name
+                        << ", parameter length "
+                        << method_formals->len() 
+                        << " is different from original length "
+                        << original_method_formals->len()
+                        << ".\n";
+                    raise_error();
+                }
+                for (
+                    int i = original_method_formals->first(); 
+                    original_method_formals->more(i); 
+                    i = original_method_formals->next(i)
+                ) {
+                    Formal original_formal = original_method_formals->nth(i);
+                    Formal formal = method_formals->nth(i);
+                    if (original_formal->get_type() != formal->get_type()) {
+                        semant_error(c) << "In redefined method "
+                            << method_name
+                            << ", parameter type "
+                            << formal->get_type() 
+                            << " is different from original type "
+                            << original_formal->get_type()
+                            << ".\n";
+                        raise_error();
+                    }
+                }
+            }
+            // override the method
+            method_map[method_name] = method;
+        }
+    }
+    this->class_attr_map[class_name] = attr_map;
+    this->class_method_map[class_name] = method_map;
+    return;
 }
 
 /*   This is the entry point to the semantic checker.
@@ -406,17 +547,26 @@ void program_class::semant()
         raise_error();
     }
 
-    classtable->init_inheritance_level_map();
+    classtable->build_inheritance_level_map();
 
-    /*
-     * 3. For each class
-     *    (a) Traverse the AST, gathering all visible declarations in a symbol table.
-     *    (b) Check each expression for type correctness.
-     *    (c) Annotate the AST with types.
-     */
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        // TODO: handle scope & type check
+        classtable->build_class_feature_map(classes->nth(i));
     }
+
+    // 3. For each class
+    //    (a) Traverse the AST, gathering all visible declarations in a symbol table.
+    //    (b) Check each expression for type correctness.
+    //    (c) Annotate the AST with types.
+    TypeEnv env;
+    env.object_method_env = new SymbolTable<Symbol, Symbol>();
+    env.class_table = classtable;
+    env.current_class = NULL;
+    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        env.object_method_env->enterscope();
+        
+        env.object_method_env->exitscope();
+    }
+
     if (classtable->errors()) {
         raise_error();
     }
