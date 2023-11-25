@@ -534,12 +534,19 @@ Class_ class__class::type_check(TypeEnv type_env) {
 }
 Feature method_class::type_check(TypeEnv type_env) {
     // method ::= ID( [ formal [[,formal]]* ] ) : TYPE { expr }
+    
+    //////////////////////////////////////////////////////////////////
+    //                      Start Method Scope                      //
+    //////////////////////////////////////////////////////////////////
     type_env.object_env->enterscope();
     for (int i = this->formals->first(); this->formals->more(i); i = this->formals->next(i)) {
         this->formals->nth(i)->type_check(type_env);
     }
     
     type_env.object_env->exitscope();
+    //////////////////////////////////////////////////////////////////
+    //                       End Method Scope                       //
+    //////////////////////////////////////////////////////////////////
     return this;
 }
 Feature attr_class::type_check(TypeEnv type_env) {}
@@ -616,6 +623,9 @@ void program_class::semant()
     type_env.class_table = classtable;
     type_env.current_class = NULL;
 
+    //////////////////////////////////////////////////////////////////
+    //                     Start Top Level Scope                    //
+    //////////////////////////////////////////////////////////////////
     // All class types are valid types for the program.
     type_env.object_env->enterscope();
     std::map<Symbol, Class_> class_map = classtable->get_class_map();
@@ -632,6 +642,9 @@ void program_class::semant()
         Class_ current_class = classes->nth(i);
         type_env.current_class = current_class;
         
+        //////////////////////////////////////////////////////////////////
+        //                       Start Class Scope                      //
+        //////////////////////////////////////////////////////////////////
         type_env.object_env->enterscope();
         // prepare the initial object environment
         std::map<Symbol, attr_class*> attr_map = classtable->get_class_attr_map(current_class->get_name());
@@ -643,11 +656,16 @@ void program_class::semant()
             Symbol type_decl = it->second->get_type();
             type_env.object_env->addid(it->first, &type_decl);
         }
-        // GO GO type check!
         current_class->type_check(type_env);
         type_env.object_env->exitscope();
+        //////////////////////////////////////////////////////////////////
+        //                        End Class Scope                       //
+        //////////////////////////////////////////////////////////////////
     }
     type_env.object_env->exitscope();
+    //////////////////////////////////////////////////////////////////
+    //                      End Top Level Scope                     //
+    //////////////////////////////////////////////////////////////////
 
     if (classtable->errors()) {
         raise_error();
