@@ -529,6 +529,36 @@ void ClassTable::build_class_feature_map(Class_ c) {
     return;
 }
 
+Class_ class__class::type_check(TypeEnv type_env) {}
+Feature method_class::type_check(TypeEnv type_env) {}
+Feature attr_class::type_check(TypeEnv type_env) {}
+Formal formal_class::type_check(TypeEnv type_env) {}
+Symbol branch_class::type_check(TypeEnv type_env) {}
+Expression assign_class::type_check(TypeEnv type_env) {}
+Expression static_dispatch_class::type_check(TypeEnv type_env) {}
+Expression dispatch_class::type_check(TypeEnv type_env) {}
+Expression cond_class::type_check(TypeEnv type_env) {}
+Expression loop_class::type_check(TypeEnv type_env) {}
+Expression typcase_class::type_check(TypeEnv type_env) {}
+Expression block_class::type_check(TypeEnv type_env) {}
+Expression let_class::type_check(TypeEnv type_env) {}
+Expression plus_class::type_check(TypeEnv type_env) {}
+Expression sub_class::type_check(TypeEnv type_env) {}
+Expression mul_class::type_check(TypeEnv type_env) {}
+Expression divide_class::type_check(TypeEnv type_env) {}
+Expression neg_class::type_check(TypeEnv type_env) {}
+Expression lt_class::type_check(TypeEnv type_env) {}
+Expression eq_class::type_check(TypeEnv type_env) {}
+Expression leq_class::type_check(TypeEnv type_env) {}
+Expression comp_class::type_check(TypeEnv type_env) {}
+Expression int_const_class::type_check(TypeEnv type_env) {}
+Expression bool_const_class::type_check(TypeEnv type_env) {}
+Expression string_const_class::type_check(TypeEnv type_env) {}
+Expression new__class::type_check(TypeEnv type_env) {}
+Expression isvoid_class::type_check(TypeEnv type_env) {}
+Expression no_expr_class::type_check(TypeEnv type_env) {}
+Expression object_class::type_check(TypeEnv type_env) {}
+
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -591,7 +621,7 @@ void program_class::semant()
             type_env.object_env->addid(it->first, &type_decl);
         }
         // GO GO type check!
-        // current_class->type_check(type_env);
+        current_class->type_check(type_env);
         type_env.object_env->exitscope();
     }
 

@@ -12,6 +12,8 @@
 #include "tree.h"
 #include "cool-tree.handcode.h"
 
+// TypeEnv is defined in semant.h
+struct TypeEnv;
 
 // define the class for phylum
 // define simple phylum - Program
@@ -35,6 +37,7 @@ class Class__class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
+   virtual Class_ type_check(TypeEnv type_env) = 0;
    virtual Symbol get_name() = 0;
    virtual Symbol get_parent() = 0;
    virtual Features get_features() = 0;
@@ -52,6 +55,7 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
+   virtual Feature type_check(TypeEnv type_env) = 0;
    virtual bool is_attr() = 0;
    virtual Symbol get_name() = 0;
 
@@ -68,6 +72,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
+   virtual Formal type_check(TypeEnv type_env) = 0;
    virtual Symbol get_type() = 0;
 
 #ifdef Formal_EXTRAS
@@ -83,6 +88,7 @@ class Expression_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
+   virtual Expression type_check(TypeEnv type_env) = 0;
 
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
@@ -97,6 +103,7 @@ class Case_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
+   virtual Symbol type_check(TypeEnv type_env) = 0;
 
 #ifdef Case_EXTRAS
    Case_EXTRAS
@@ -167,6 +174,7 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
+   Class_ type_check(TypeEnv type_env);
    Symbol get_name() { return name; };
    Symbol get_parent() { return parent; };
    Features get_features() { return features; };
@@ -196,6 +204,7 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   Feature type_check(TypeEnv type_env);
    bool is_attr() { return false; }
    Symbol get_name() { return name; }
    Symbol get_return_type() { return return_type; }
@@ -224,6 +233,7 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   Feature type_check(TypeEnv type_env);
    bool is_attr() { return true; }
    Symbol get_name() { return name; }
    Symbol get_type() { return type_decl; }
@@ -249,6 +259,7 @@ public:
    }
    Formal copy_Formal();
    void dump(ostream& stream, int n);
+   Formal type_check(TypeEnv type_env);
    Symbol get_type() { return type_decl; }
 
 #ifdef Formal_SHARED_EXTRAS
@@ -274,6 +285,7 @@ public:
    }
    Case copy_Case();
    void dump(ostream& stream, int n);
+   Symbol type_check(TypeEnv type_env);
 
 #ifdef Case_SHARED_EXTRAS
    Case_SHARED_EXTRAS
@@ -296,6 +308,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -322,6 +335,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -346,6 +360,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -370,6 +385,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -392,6 +408,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -414,6 +431,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -434,6 +452,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -460,6 +479,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -482,6 +502,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -504,6 +525,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -526,6 +548,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -548,6 +571,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -568,6 +592,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -590,6 +615,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -612,6 +638,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -634,6 +661,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -654,6 +682,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -674,6 +703,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -694,6 +724,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -714,6 +745,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -734,6 +766,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -754,6 +787,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -772,6 +806,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -792,6 +827,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Expression type_check(TypeEnv type_env);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
