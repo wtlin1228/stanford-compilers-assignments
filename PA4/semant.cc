@@ -626,17 +626,8 @@ void program_class::semant()
     //////////////////////////////////////////////////////////////////
     //                     Start Top Level Scope                    //
     //////////////////////////////////////////////////////////////////
-    // All class types are valid types for the program.
     type_env.object_env->enterscope();
-    std::map<Symbol, Class_> class_map = classtable->get_class_map();
-    for (
-        std::map<Symbol, Class_>::iterator it = class_map.begin(); 
-        it != class_map.end(); 
-        ++it
-    ) {
-        Symbol class_name = it->first;
-        type_env.object_env->addid(class_name, &class_name);
-    }    
+    // add the global variables here if needed
 
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         Class_ current_class = classes->nth(i);
