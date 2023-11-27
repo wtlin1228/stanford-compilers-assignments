@@ -124,6 +124,9 @@ public:
   std::map<Symbol, method_class*> get_class_method_map(Symbol class_name) {
     return class_method_map.at(class_name);
   }
+
+  // return true if t1 <= t2
+  bool is_subtype_of(Symbol t1, Symbol t2);
 };
 
 

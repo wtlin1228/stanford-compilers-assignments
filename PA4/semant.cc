@@ -525,7 +525,22 @@ void ClassTable::build_class_feature_map(Class_ c) {
     return;
 }
 
+bool ClassTable::is_subtype_of(Symbol t1, Symbol t2) {
+    if (t2 == Object) {
+        return true;
+    }
+    Symbol s = t1;
+    while (s != Object) {
+        if (s == t2) {
+            return true;
+        }
+        s = this->inheritance_graph.at(s);
+    }
+    return false;
+}
+
 Class_ class__class::type_check(TypeEnv type_env) {
+    // cout << "class__class::type_check" << " , name = " << this->name << endl;
     // class ::= class TYPE [inherits TYPE] { [[feature;]]* }
     for (int i = this->features->first(); this->features->more(i); i = this->features->next(i)) {
         this->features->nth(i)->type_check(type_env);
@@ -533,6 +548,7 @@ Class_ class__class::type_check(TypeEnv type_env) {
     return this;
 }
 Feature method_class::type_check(TypeEnv type_env) {
+    // cout << "method_class::type_check" << " , name = " << this->name << endl;
     // method ::= ID( [ formal [[,formal]]* ] ) : TYPE { expr }
     
     //////////////////////////////////////////////////////////////////
@@ -553,8 +569,28 @@ Feature method_class::type_check(TypeEnv type_env) {
     //////////////////////////////////////////////////////////////////
     return this;
 }
-Feature attr_class::type_check(TypeEnv type_env) {}
+Feature attr_class::type_check(TypeEnv type_env) {
+    // cout << "attr_class::type_check" << " , name = " << this->name << endl;
+    Symbol inferred_init_type = this->init->type_check(type_env)->get_type();
+    if (inferred_init_type == SELF_TYPE) {
+        inferred_init_type = type_env.current_class->get_name();
+    }
+    if (!type_env.class_table->is_subtype_of(inferred_init_type, this->type_decl)) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Inferred type " << inferred_init_type << " of initialization of attribute " << this->name
+          << " does not conform to declared type " << this->type_decl << ".\n";
+    }
+    if (this->name == self) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "'self' cannot be the name of an attribute.";
+    }
+    return this;
+}
 Formal formal_class::type_check(TypeEnv type_env) {
+    // cout << "formal_class::type_check" << endl;
+    // formal ::= ID : Type
     if (this->type_decl == SELF_TYPE) {
         type_env.class_table->semant_error(
             type_env.current_class->get_filename(), this
@@ -575,31 +611,128 @@ Formal formal_class::type_check(TypeEnv type_env) {
     }
     return this;
 }
-Symbol branch_class::type_check(TypeEnv type_env) {}
-Expression assign_class::type_check(TypeEnv type_env) {}
-Expression static_dispatch_class::type_check(TypeEnv type_env) {}
-Expression dispatch_class::type_check(TypeEnv type_env) {}
-Expression cond_class::type_check(TypeEnv type_env) {}
-Expression loop_class::type_check(TypeEnv type_env) {}
-Expression typcase_class::type_check(TypeEnv type_env) {}
-Expression block_class::type_check(TypeEnv type_env) {}
-Expression let_class::type_check(TypeEnv type_env) {}
-Expression plus_class::type_check(TypeEnv type_env) {}
-Expression sub_class::type_check(TypeEnv type_env) {}
-Expression mul_class::type_check(TypeEnv type_env) {}
-Expression divide_class::type_check(TypeEnv type_env) {}
-Expression neg_class::type_check(TypeEnv type_env) {}
-Expression lt_class::type_check(TypeEnv type_env) {}
-Expression eq_class::type_check(TypeEnv type_env) {}
-Expression leq_class::type_check(TypeEnv type_env) {}
-Expression comp_class::type_check(TypeEnv type_env) {}
-Expression int_const_class::type_check(TypeEnv type_env) {}
-Expression bool_const_class::type_check(TypeEnv type_env) {}
-Expression string_const_class::type_check(TypeEnv type_env) {}
-Expression new__class::type_check(TypeEnv type_env) {}
-Expression isvoid_class::type_check(TypeEnv type_env) {}
-Expression no_expr_class::type_check(TypeEnv type_env) {}
-Expression object_class::type_check(TypeEnv type_env) {}
+Symbol branch_class::type_check(TypeEnv type_env) {
+    // cout << "branch_class::type_check" << endl;
+}
+Expression assign_class::type_check(TypeEnv type_env) {
+    // cout << "assign_class::type_check" << endl;
+    // assign ::= ID <- expr
+    Symbol left_type = *type_env.object_env->lookup(this->name);
+    Symbol right_type = this->expr->type_check(type_env)->get_type();
+    // cout << "left type is " << left_type << ", right type is " << right_type << endl;
+    if (right_type == SELF_TYPE) {
+        right_type = type_env.current_class->get_name();
+    }
+    if (!type_env.class_table->is_subtype_of(right_type, left_type)) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Inferred type " << right_type << " of initialization of attribute " << this->name
+          << " does not conform to declared type " << left_type << ".\n";
+        this->set_type(Object);
+    } else {
+        this->set_type(right_type);
+    }
+    return this;
+}
+Expression static_dispatch_class::type_check(TypeEnv type_env) {
+    // cout << "static_dispatch_class::type_check" << endl;
+}
+Expression dispatch_class::type_check(TypeEnv type_env) {
+    // cout << "dispatch_class::type_check" << endl;
+}
+Expression cond_class::type_check(TypeEnv type_env) {
+    // cout << "cond_class::type_check" << endl;
+}
+Expression loop_class::type_check(TypeEnv type_env) {
+    // cout << "loop_class::type_check" << endl;
+}
+Expression typcase_class::type_check(TypeEnv type_env) {
+    // cout << "typcase_class::type_check" << endl;
+}
+Expression block_class::type_check(TypeEnv type_env) {
+    // cout << "block_class::type_check" << endl;
+}
+Expression let_class::type_check(TypeEnv type_env) {
+    // cout << "let_class::type_check" << endl;
+}
+Expression plus_class::type_check(TypeEnv type_env) {
+    // cout << "plus_class::type_check" << endl;
+}
+Expression sub_class::type_check(TypeEnv type_env) {
+    // cout << "sub_class::type_check" << endl;
+}
+Expression mul_class::type_check(TypeEnv type_env) {
+    // cout << "mul_class::type_check" << endl;
+}
+Expression divide_class::type_check(TypeEnv type_env) {
+    // cout << "divide_class::type_check" << endl;
+}
+Expression neg_class::type_check(TypeEnv type_env) {
+    // cout << "neg_class::type_check" << endl;
+}
+Expression lt_class::type_check(TypeEnv type_env) {
+    // cout << "lt_class::type_check" << endl;
+}
+Expression eq_class::type_check(TypeEnv type_env) {
+    // cout << "eq_class::type_check" << endl;
+}
+Expression leq_class::type_check(TypeEnv type_env) {
+    // cout << "leq_class::type_check" << endl;
+}
+Expression comp_class::type_check(TypeEnv type_env) {
+    // cout << "comp_class::type_check" << endl;
+}
+Expression int_const_class::type_check(TypeEnv type_env) {
+    // cout << "int_const_class::type_check" << endl;
+    // expr ::= integer
+    return this->set_type(Int);
+}
+Expression bool_const_class::type_check(TypeEnv type_env) {
+    // cout << "bool_const_class::type_check" << endl;
+    // expr ::= true
+    //        | false
+    return this->set_type(Bool);
+}
+Expression string_const_class::type_check(TypeEnv type_env) {
+    // cout << "string_const_class::type_check" << endl;
+    // expr ::= string
+    return this->set_type(Str);
+}
+Expression new__class::type_check(TypeEnv type_env) {
+    // cout << "new__class::type_check" << endl;
+    // expr ::= new TYPE
+    if (type_env.class_table->has_class(this->type_name) || this->type_name == SELF_TYPE) {
+        return this->set_type(this->type_name);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "'new' used with undefined class " << this->type_name << ".\n";
+    return this->set_type(Object);
+}
+Expression isvoid_class::type_check(TypeEnv type_env) {
+    // cout << "isvoid_class::type_check" << endl;
+    // expr ::= isvoid expr
+    this->e1->type_check(type_env);
+    return this->set_type(Bool);
+}
+Expression no_expr_class::type_check(TypeEnv type_env) {
+    // cout << "no_expr_class::type_check" << endl;
+    // expr ::= /* no expr */
+    this->set_type(No_type);
+}
+Expression object_class::type_check(TypeEnv type_env) {
+    // cout << "object_class::type_check" << endl;
+    // expr ::= ID
+    if (this->name == self) {
+        return this->set_type(SELF_TYPE);
+    } else if (type_env.object_env->lookup(this->name) != NULL) {
+        return this->set_type(*(type_env.object_env->lookup(this->name)));
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "Undeclared identifier " << this->name << ".\n";
+    return this;
+}
 
 /*   This is the entry point to the semantic checker.
 
