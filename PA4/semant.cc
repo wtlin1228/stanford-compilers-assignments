@@ -639,9 +639,44 @@ Expression typcase_class::type_check(TypeEnv type_env) {
 }
 Expression block_class::type_check(TypeEnv type_env) {
     // cout << "block_class::type_check" << endl;
+    // expr ::= { [[expr;]]+ }
+    Symbol last_expr_type;
+    for (int i = this->body->first(); this->body->more(i); i = this->body->next(i)) {
+        last_expr_type = this->body->nth(i)->type_check(type_env)->get_type();
+    }
+    return this->set_type(last_expr_type);
 }
 Expression let_class::type_check(TypeEnv type_env) {
     // cout << "let_class::type_check" << endl;
+    // expr ::= let ID : TYPE [ <- expr ] [[, ID : TYPE [<- expr ]]]* in expr
+    if (this->identifier == self) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "'self' cannot be bound in a 'let' expression.\n";
+        return this->set_type(Object);
+    }
+    Symbol inferred_init_type = this->init->type_check(type_env)->get_type();
+    if (
+        inferred_init_type != No_type &&
+        !type_env.class_table->is_subtype_of(inferred_init_type, this->type_decl)
+    ) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Inferred type " << inferred_init_type
+            << " of initialization of " << this->identifier
+            << " does not conform to identifier's declared type " << this->type_decl << ".\n";
+        return this->set_type(Object);
+    }
+    //////////////////////////////////////////////////////////////////
+    //                       Start Let Scope                        //
+    //////////////////////////////////////////////////////////////////
+    type_env.object_env->enterscope();
+    Symbol type_decl = this->type_decl;
+    type_env.object_env->addid(this->identifier, &type_decl);
+    Symbol inferred_body_type = this->body->type_check(type_env)->get_type();
+    type_env.object_env->exitscope();
+    //////////////////////////////////////////////////////////////////
+    //                        End Let Scope                         //
+    //////////////////////////////////////////////////////////////////
+    return this->set_type(inferred_body_type);
 }
 Expression plus_class::type_check(TypeEnv type_env) {
     // cout << "plus_class::type_check" << endl;
