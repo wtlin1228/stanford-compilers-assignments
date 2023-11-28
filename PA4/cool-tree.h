@@ -104,6 +104,7 @@ public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
    virtual Symbol type_check(TypeEnv type_env) = 0;
+   virtual Symbol get_type() = 0;
 
 #ifdef Case_EXTRAS
    Case_EXTRAS

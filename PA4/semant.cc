@@ -551,7 +551,6 @@ Class_ class__class::type_check(TypeEnv type_env) {
 Feature method_class::type_check(TypeEnv type_env) {
     // cout << "method_class::type_check" << " , name = " << this->name << endl;
     // method ::= ID( [ formal [[,formal]]* ] ) : TYPE { expr }
-
     //////////////////////////////////////////////////////////////////
     //                      Start Method Scope                      //
     //////////////////////////////////////////////////////////////////
@@ -692,14 +691,14 @@ Expression typcase_class::type_check(TypeEnv type_env) {
     Symbol inferred_case_type = cases->nth(cases->first())->type_check(type_env);
     for (int i = this->cases->first(); this->cases->more(i); i = this->cases->next(i)) {
         Symbol case_id_type = this->cases->nth(i)->get_type();
-        if (case_types.count(case_type) != 0) {
+        if (case_types.count(case_id_type) != 0) {
             type_env.class_table->semant_error(type_env.current_class) 
-                << "Duplicate branch " << case_type << " in case statement.\n";
+                << "Duplicate branch " << case_id_type << " in case statement.\n";
             return this->set_type(Object);
         }
-        case_types.insert(case_type);
+        case_types.insert(case_id_type);
         Symbol case_expr_type = this->cases->nth(i)->type_check(type_env);
-        inferred_case_type = type_env.class_table->lub(inferred_case_type, case_type);
+        inferred_case_type = type_env.class_table->lub(inferred_case_type, case_expr_type);
     }
     return this->set_type(inferred_case_type);
 }
