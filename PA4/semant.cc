@@ -657,30 +657,125 @@ Expression let_class::type_check(TypeEnv type_env) {
 }
 Expression plus_class::type_check(TypeEnv type_env) {
     // cout << "plus_class::type_check" << endl;
+    // expr ::= expr + expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " + " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression sub_class::type_check(TypeEnv type_env) {
     // cout << "sub_class::type_check" << endl;
+    // expr ::= expr - expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " - " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression mul_class::type_check(TypeEnv type_env) {
     // cout << "mul_class::type_check" << endl;
+    // expr ::= expr * expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " * " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression divide_class::type_check(TypeEnv type_env) {
     // cout << "divide_class::type_check" << endl;
+    // expr ::= expr / expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " / " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression neg_class::type_check(TypeEnv type_env) {
     // cout << "neg_class::type_check" << endl;
+    // expr ::= ~expr
+    Symbol inferred_e1_type = this->e1->type_check(type_env)->get_type();
+    if (inferred_e1_type == Int) {
+        return this->set_type(Int);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "Argument of '~' has type " << inferred_e1_type << " instead of Int.\n";
+    return this->set_type(Object);
 }
 Expression lt_class::type_check(TypeEnv type_env) {
     // cout << "lt_class::type_check" << endl;
+    // expr ::= expr < expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " < " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression eq_class::type_check(TypeEnv type_env) {
     // cout << "eq_class::type_check" << endl;
+    // expr ::= expr = expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (
+        (left_expr_type == Int && right_expr_type != Int) ||
+        (left_expr_type != Int && right_expr_type == Int) ||
+        (left_expr_type == Str && right_expr_type != Str) ||
+        (left_expr_type != Str && right_expr_type == Str) ||
+        (left_expr_type == Bool && right_expr_type != Bool) ||
+        (left_expr_type != Bool && right_expr_type == Bool)
+    ) {
+        type_env.class_table->semant_error(
+            type_env.current_class->get_filename(), this
+        ) << "Illegal comparison with a basic type.\n";
+        return this->set_type(Object);
+    }
+    return this->set_type(Bool);
 }
 Expression leq_class::type_check(TypeEnv type_env) {
     // cout << "leq_class::type_check" << endl;
+    // expr ::= expr <= expr
+    Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
+    Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
+    if (left_expr_type == Int && right_expr_type == Int) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "non-Int arguments: " << left_expr_type << " <= " << right_expr_type << ".\n";
+    return this->set_type(Object);
 }
 Expression comp_class::type_check(TypeEnv type_env) {
     // cout << "comp_class::type_check" << endl;
+    // expr ::= not expr
+    Symbol inferred_e1_type = this->e1->type_check(type_env)->get_type();
+    if (inferred_e1_type == Bool) {
+        return this->set_type(Bool);
+    }
+    type_env.class_table->semant_error(
+        type_env.current_class->get_filename(), this
+    ) << "Argument of 'not' has type " << inferred_e1_type << " instead of Bool.\n";
+    return this->set_type(Object);
 }
 Expression int_const_class::type_check(TypeEnv type_env) {
     // cout << "int_const_class::type_check" << endl;

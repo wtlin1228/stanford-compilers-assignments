@@ -1,23 +1,17 @@
 class X {
-    -- x: Int <- 5;
-
-    -- get_name(a: Int, b: Bool): String { "X" };
+    attr_1: Bool <- 1 + true;
+    attr_2: Bool <- 1 - true;    
+    attr_3: Bool <- 1 * true;    
+    attr_4: Bool <- 1 / true;    
+    attr_5: Bool <- ~true;    
+    attr_6: Bool <- 1 < true;    
+    attr_7: Bool <- 1 = true;    
+    attr_8: Bool <- 1 <= true;    
+    attr_9: Bool <- not 1;    
 };
+
 class Y inherits X {
-    -- y: Bool <- true;
 
-    yyyyy: X <- self;
-    zzzzz: SELF_TYPE <- new X;
-        
-    -- get_name(a: Int, b: Bool, c: AAA, a: String): String { "Y" };
-    -- get_phone(): String { "0988777123" };
 };
--- class Z inherits Y {};
-
--- class A inherits B {};
--- class B inherits C {};
--- class C inherits B {};
-
--- class D inherits E {};
 
 class Main {};
