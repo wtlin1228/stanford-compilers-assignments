@@ -286,6 +286,7 @@ public:
    Case copy_Case();
    void dump(ostream& stream, int n);
    Symbol type_check(TypeEnv type_env);
+   Symbol get_type() { return type_decl; }
 
 #ifdef Case_SHARED_EXTRAS
    Case_SHARED_EXTRAS

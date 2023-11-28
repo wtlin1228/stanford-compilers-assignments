@@ -551,7 +551,7 @@ Class_ class__class::type_check(TypeEnv type_env) {
 Feature method_class::type_check(TypeEnv type_env) {
     // cout << "method_class::type_check" << " , name = " << this->name << endl;
     // method ::= ID( [ formal [[,formal]]* ] ) : TYPE { expr }
-    
+
     //////////////////////////////////////////////////////////////////
     //                      Start Method Scope                      //
     //////////////////////////////////////////////////////////////////
@@ -560,10 +560,12 @@ Feature method_class::type_check(TypeEnv type_env) {
         this->formals->nth(i)->type_check(type_env);
     }
     Symbol inferred_return_type = this->expr->type_check(type_env)->get_type();
-
-    // TODO: ensure inferred return type <= declared return type, which is
-    //       inferred return type is subtype of declared return type 
-    
+    if (!type_env.class_table->is_subtype_of(inferred_return_type, this->return_type)) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Inferred return type " << inferred_return_type
+            << " of method " << this->name 
+            << " does not conform to declared return type " << this->return_type << ".\n";
+    }
     type_env.object_env->exitscope();
     //////////////////////////////////////////////////////////////////
     //                       End Method Scope                       //
@@ -611,6 +613,21 @@ Formal formal_class::type_check(TypeEnv type_env) {
 }
 Symbol branch_class::type_check(TypeEnv type_env) {
     // cout << "branch_class::type_check" << endl;
+    // branch ::= ID : TYPE => expr
+    //////////////////////////////////////////////////////////////////
+    //                     Start Branch Scope                       //
+    //////////////////////////////////////////////////////////////////
+    // The identifier introduced by a branch of a case hides any variable or 
+    // attribute definition for id visible in the containing scope.
+    type_env.object_env->enterscope();
+    Symbol type_decl = this->type_decl;
+    type_env.object_env->addid(this->name, &type_decl);
+    Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
+    type_env.object_env->exitscope();
+    //////////////////////////////////////////////////////////////////
+    //                      End Branch Scope                        //
+    //////////////////////////////////////////////////////////////////
+    return inferred_expr_type;
 }
 Expression assign_class::type_check(TypeEnv type_env) {
     // cout << "assign_class::type_check" << endl;
@@ -670,6 +687,21 @@ Expression loop_class::type_check(TypeEnv type_env) {
 }
 Expression typcase_class::type_check(TypeEnv type_env) {
     // cout << "typcase_class::type_check" << endl;
+    // expr ::= case expr of [[ID : TYPE => expr;]]+ esac
+    std::set<Symbol> case_types;
+    Symbol inferred_case_type = cases->nth(cases->first())->type_check(type_env);
+    for (int i = this->cases->first(); this->cases->more(i); i = this->cases->next(i)) {
+        Symbol case_id_type = this->cases->nth(i)->get_type();
+        if (case_types.count(case_type) != 0) {
+            type_env.class_table->semant_error(type_env.current_class) 
+                << "Duplicate branch " << case_type << " in case statement.\n";
+            return this->set_type(Object);
+        }
+        case_types.insert(case_type);
+        Symbol case_expr_type = this->cases->nth(i)->type_check(type_env);
+        inferred_case_type = type_env.class_table->lub(inferred_case_type, case_type);
+    }
+    return this->set_type(inferred_case_type);
 }
 Expression block_class::type_check(TypeEnv type_env) {
     // cout << "block_class::type_check" << endl;
