@@ -357,23 +357,32 @@ bool ClassTable::is_acyclic() {
 }
 
 /*
- * `build_inheritance_level_map` initializes `inheritance_level_map`.
- * 
- * Time complexity: O(n), where n is the size of class list
- * Space complexity: O(n), where n is the size of class list
- */
-void ClassTable::build_inheritance_level_map() {
-    // TODO: Not implemented
-}
-
-/*
  * `lub` returns the least upper bound for two classes.
  * 
- * time complexity: O(l), where l is the longest inheritance chain
- * space complexity: O(1)
+ * time complexity: O(n), where n is the longest inheritance chain
+ * space complexity: O(n), where n is the longest inheritance chain
  */
 Symbol ClassTable::lub(Symbol c1, Symbol c2) {
-    // TODO: Not implemented
+    if (c1 == Object || c2 == Object) {
+        return Object;
+    }
+    std::set<Symbol> path;
+    Symbol s = c1;
+    while (s != Object) {
+        if (s == c2) {
+            return s;
+        }
+        path.insert(s);
+        s = this->inheritance_graph.at(s);
+    }
+    s = c2;
+    while (s != Object) {
+        if (path.count(s) != 0) {
+            return s;
+        }
+        s = this->inheritance_graph.at(s);
+    }
+    return Object;
 }
 
 /*
@@ -630,9 +639,34 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
 }
 Expression cond_class::type_check(TypeEnv type_env) {
     // cout << "cond_class::type_check" << endl;
+    // expr ::= if expr then expr else expr fi
+    Symbol inferred_pred_type = this->pred->type_check(type_env)->get_type();
+    Symbol inferred_then_exp_type = this->then_exp->type_check(type_env)->get_type();
+    Symbol inferred_else_exp_type = this->else_exp->type_check(type_env)->get_type();
+    if (inferred_then_exp_type == SELF_TYPE) {
+        inferred_then_exp_type = type_env.current_class->get_name();
+    }
+    if (inferred_else_exp_type == SELF_TYPE) {
+        inferred_else_exp_type = type_env.current_class->get_name();
+    }
+    if (inferred_pred_type != Bool) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Predicate of 'if' does not have type Bool.\n";
+        return this->set_type(Object);
+    }
+    Symbol lub_type = type_env.class_table->lub(inferred_then_exp_type, inferred_else_exp_type);
+    return this->set_type(lub_type);
 }
 Expression loop_class::type_check(TypeEnv type_env) {
     // cout << "loop_class::type_check" << endl;
+    // expr ::= while expr loop expr pool
+    Symbol inferred_pred_type = this->pred->type_check(type_env)->get_type();
+    Symbol inferred_body_type = this->body->type_check(type_env)->get_type();
+    if (inferred_pred_type != Bool) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Loop condition does not have type Bool.\n";
+    }
+    return this->set_type(Object);
 }
 Expression typcase_class::type_check(TypeEnv type_env) {
     // cout << "typcase_class::type_check" << endl;
@@ -870,8 +904,6 @@ void program_class::semant()
     ) {
         raise_error();
     }
-
-    classtable->build_inheritance_level_map();
 
     // 3. For each class
     //    (a) Traverse the AST, gathering all visible declarations in a symbol table.

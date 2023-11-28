@@ -37,15 +37,6 @@ private:
   std::map<Symbol, Class_> class_map;
   std::map<Symbol, Symbol> inheritance_graph;
 
-  // inheritance_level_map will be used to find the lub (least upper bound)
-  // level(Object) = 0
-  // level(Str) = 1
-  // level(A) = 3 if
-  //   class A inherits B {};
-  //   class B inherits C {};
-  // Note: should only be used after init_inheritance_level_map().
-  std::map<Symbol, int> inheritance_level_map;
-
   // For program:
   //   Class X {
   //     a: Int <- 1;
@@ -113,7 +104,6 @@ public:
   bool is_acyclic();
   
   // for least upper bound
-  void build_inheritance_level_map();
   Symbol lub(Symbol c1, Symbol c2);
 
   // build class_method_map and class_attr_map
