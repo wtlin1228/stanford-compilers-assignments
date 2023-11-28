@@ -462,9 +462,8 @@ void ClassTable::build_class_feature_map(Class_ c) {
             Symbol attr_name = attr->get_name();
             // Inherited attributes cannot be redefined.
             if (attr_map.count(attr_name) > 0) {
-                this->semant_error(c) << "Attribute "
-                    << attr_name
-                    << " is an attribute of an inherited class.\n";
+                this->semant_error(c) 
+                    << "Attribute " << attr_name << " is an attribute of an inherited class.\n";
                 raise_error();
             }
             attr_map[attr_name] = attr;
@@ -476,24 +475,19 @@ void ClassTable::build_class_feature_map(Class_ c) {
             if (method_map.count(method_name) > 0) {
                 method_class* original_method = method_map.at(method_name);
                 if (original_method->get_return_type() != method->get_return_type()) {
-                    this->semant_error(c) << "In redefined method "
-                        << method_name
-                        << ", return type "
-                        << method->get_return_type()
-                        << " is different from original return type "
-                        << original_method->get_return_type()
-                        << ".\n";
+                    this->semant_error(c) 
+                        << "In redefined method " << method_name << ", return type "
+                        << method->get_return_type() << " is different from original return type "
+                        << original_method->get_return_type() << ".\n";
                     raise_error();
                 }
                 Formals original_method_formals = original_method->get_formals();
                 Formals method_formals = method->get_formals();
                 if (original_method_formals->len() != method_formals->len()) {
-                    this->semant_error(c) << "In redefined method "
-                        << method_name
-                        << ", parameter length "
-                        << method_formals->len() 
-                        << " is different from original length "
-                        << original_method_formals->len()
+                    this->semant_error(c) 
+                        << "In redefined method " << method_name
+                        << ", parameter length " << method_formals->len()  
+                        << " is different from original length " << original_method_formals->len()
                         << ".\n";
                     raise_error();
                 }
@@ -505,12 +499,10 @@ void ClassTable::build_class_feature_map(Class_ c) {
                     Formal original_formal = original_method_formals->nth(i);
                     Formal formal = method_formals->nth(i);
                     if (original_formal->get_type() != formal->get_type()) {
-                        this->semant_error(c) << "In redefined method "
-                            << method_name
-                            << ", parameter type "
-                            << formal->get_type() 
-                            << " is different from original type "
-                            << original_formal->get_type()
+                        this->semant_error(c) 
+                            << "In redefined method " << method_name 
+                            << ", parameter type " << formal->get_type()  
+                            << " is different from original type " << original_formal->get_type()
                             << ".\n";
                         raise_error();
                     }
@@ -576,15 +568,14 @@ Feature attr_class::type_check(TypeEnv type_env) {
         inferred_init_type = type_env.current_class->get_name();
     }
     if (!type_env.class_table->is_subtype_of(inferred_init_type, this->type_decl)) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Inferred type " << inferred_init_type << " of initialization of attribute " << this->name
-          << " does not conform to declared type " << this->type_decl << ".\n";
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Inferred type " << inferred_init_type 
+            << " of initialization of attribute " << this->name
+            << " does not conform to declared type " << this->type_decl << ".\n";
     }
     if (this->name == self) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "'self' cannot be the name of an attribute.";
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "'self' cannot be the name of an attribute.\n";
     }
     return this;
 }
@@ -592,19 +583,17 @@ Formal formal_class::type_check(TypeEnv type_env) {
     // cout << "formal_class::type_check" << endl;
     // formal ::= ID : Type
     if (this->type_decl == SELF_TYPE) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Formal parameter " << this->name << " cannot have type SELF_TYPE.\n";
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Formal parameter " << this->name << " cannot have type SELF_TYPE.\n";
     }
     if (!type_env.class_table->has_class(this->type_decl)) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Class " << this->type_decl << " of formal parameter " << this->name << "is undefined.\n";
+        type_env.class_table->semant_error(type_env.current_class)
+            << "Class " << this->type_decl 
+            << " of formal parameter " << this->name << "is undefined.\n";
     }
     if (type_env.object_env->probe(this->name) != NULL) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Formal parameter " << this->name << " is multiply defined.\n";
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Formal parameter " << this->name << " is multiply defined.\n";
     } else {
         Symbol type_decl = this->type_decl;
         type_env.object_env->addid(this->name, &type_decl);
@@ -623,16 +612,15 @@ Expression assign_class::type_check(TypeEnv type_env) {
     if (right_type == SELF_TYPE) {
         right_type = type_env.current_class->get_name();
     }
-    if (!type_env.class_table->is_subtype_of(right_type, left_type)) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Inferred type " << right_type << " of initialization of attribute " << this->name
-          << " does not conform to declared type " << left_type << ".\n";
-        this->set_type(Object);
+    if (type_env.class_table->is_subtype_of(right_type, left_type)) {
+        return this->set_type(right_type);
     } else {
-        this->set_type(right_type);
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Inferred type " << right_type 
+            << " of initialization of attribute " << this->name
+            << " does not conform to declared type " << left_type << ".\n";
+        return this->set_type(Object);
     }
-    return this;
 }
 Expression static_dispatch_class::type_check(TypeEnv type_env) {
     // cout << "static_dispatch_class::type_check" << endl;
@@ -663,9 +651,8 @@ Expression plus_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " + " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " + " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression sub_class::type_check(TypeEnv type_env) {
@@ -676,9 +663,8 @@ Expression sub_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " - " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " - " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression mul_class::type_check(TypeEnv type_env) {
@@ -689,9 +675,8 @@ Expression mul_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " * " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " * " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression divide_class::type_check(TypeEnv type_env) {
@@ -702,9 +687,8 @@ Expression divide_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " / " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " / " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression neg_class::type_check(TypeEnv type_env) {
@@ -714,9 +698,8 @@ Expression neg_class::type_check(TypeEnv type_env) {
     if (inferred_e1_type == Int) {
         return this->set_type(Int);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "Argument of '~' has type " << inferred_e1_type << " instead of Int.\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "Argument of '~' has type " << inferred_e1_type << " instead of Int.\n";
     return this->set_type(Object);
 }
 Expression lt_class::type_check(TypeEnv type_env) {
@@ -727,9 +710,8 @@ Expression lt_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " < " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " < " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression eq_class::type_check(TypeEnv type_env) {
@@ -745,9 +727,8 @@ Expression eq_class::type_check(TypeEnv type_env) {
         (left_expr_type == Bool && right_expr_type != Bool) ||
         (left_expr_type != Bool && right_expr_type == Bool)
     ) {
-        type_env.class_table->semant_error(
-            type_env.current_class->get_filename(), this
-        ) << "Illegal comparison with a basic type.\n";
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Illegal comparison with a basic type.\n";
         return this->set_type(Object);
     }
     return this->set_type(Bool);
@@ -760,9 +741,8 @@ Expression leq_class::type_check(TypeEnv type_env) {
     if (left_expr_type == Int && right_expr_type == Int) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "non-Int arguments: " << left_expr_type << " <= " << right_expr_type << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "non-Int arguments: " << left_expr_type << " <= " << right_expr_type << ".\n";
     return this->set_type(Object);
 }
 Expression comp_class::type_check(TypeEnv type_env) {
@@ -772,9 +752,8 @@ Expression comp_class::type_check(TypeEnv type_env) {
     if (inferred_e1_type == Bool) {
         return this->set_type(Bool);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "Argument of 'not' has type " << inferred_e1_type << " instead of Bool.\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "Argument of 'not' has type " << inferred_e1_type << " instead of Bool.\n";
     return this->set_type(Object);
 }
 Expression int_const_class::type_check(TypeEnv type_env) {
@@ -799,9 +778,8 @@ Expression new__class::type_check(TypeEnv type_env) {
     if (type_env.class_table->has_class(this->type_name) || this->type_name == SELF_TYPE) {
         return this->set_type(this->type_name);
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "'new' used with undefined class " << this->type_name << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "'new' used with undefined class " << this->type_name << ".\n";
     return this->set_type(Object);
 }
 Expression isvoid_class::type_check(TypeEnv type_env) {
@@ -823,9 +801,8 @@ Expression object_class::type_check(TypeEnv type_env) {
     } else if (type_env.object_env->lookup(this->name) != NULL) {
         return this->set_type(*(type_env.object_env->lookup(this->name)));
     }
-    type_env.class_table->semant_error(
-        type_env.current_class->get_filename(), this
-    ) << "Undeclared identifier " << this->name << ".\n";
+    type_env.class_table->semant_error(type_env.current_class) 
+        << "Undeclared identifier " << this->name << ".\n";
     return this;
 }
 
