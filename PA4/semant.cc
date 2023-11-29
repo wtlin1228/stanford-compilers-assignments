@@ -736,6 +736,9 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
         i = method_formals->next(i)
     ) {
         Symbol inferred_formal_type = this->actual->nth(i)->type_check(type_env)->get_type();
+        if (inferred_formal_type == SELF_TYPE) {
+            inferred_formal_type = type_env.current_class->get_name();
+        }
         Formal original_formal = method_formals->nth(i);
         Symbol original_formal_type = original_formal->get_type();
         if (!type_env.class_table->is_subtype_of(inferred_formal_type, original_formal_type)) {
