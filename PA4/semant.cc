@@ -649,9 +649,88 @@ Expression assign_class::type_check(TypeEnv type_env) {
 }
 Expression static_dispatch_class::type_check(TypeEnv type_env) {
     // cout << "static_dispatch_class::type_check" << endl;
+    // expr ::= expr@TYPE.ID( [ expr [[, expr]]* ] )
+    Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
+    if (inferred_expr_type == SELF_TYPE) {
+        inferred_expr_type = type_env.current_class->get_name();
+    }
+    if (!type_env.class_table->is_subtype_of(inferred_expr_type, this->type_name)) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Expression type " << inferred_expr_type 
+            << " does not conform to declared static dispatch type " << this->type_name << ".\n";
+        return this->set_type(Object);
+    }
+    std::map<Symbol, method_class*> method_env = type_env.class_table->get_class_method_map(this->type_name);
+    if (method_env.count(this->name) == 0) {
+        type_env.class_table->semant_error(type_env.current_class)
+            << "Static dispatch to undefined method " << this->name << "\n.";
+        return this->set_type(Object);
+    }
+    method_class* method = method_env.at(this->name);
+    Formals method_formals = method->get_formals();
+    if (method_formals->len() != this->actual->len()) {
+        type_env.class_table->semant_error(type_env.current_class)
+            << "Method " << this->name << " invoked with wrong number of arguments.\n";
+    }
+    for (
+        int i = method_formals->first(); 
+        method_formals->more(i); 
+        i = method_formals->next(i)
+    ) {
+        Symbol inferred_formal_type = this->actual->nth(i)->type_check(type_env)->get_type();
+        Formal original_formal = method_formals->nth(i);
+        Symbol original_formal_type = original_formal->get_type();
+        if (!type_env.class_table->is_subtype_of(inferred_formal_type, original_formal_type)) {
+            type_env.class_table->semant_error(type_env.current_class)
+                << "In call of method " << this->name << ", type " << this->type_name 
+                << " of parameter " << original_formal->get_name() 
+                << " does not conform to declared type " << original_formal_type << ".\n";
+        }
+    }
+    if (method->get_return_type() == SELF_TYPE) {
+        return this->set_type(inferred_expr_type);
+    }
+    return this->set_type(method->get_return_type());
 }
 Expression dispatch_class::type_check(TypeEnv type_env) {
     // cout << "dispatch_class::type_check" << endl;
+    // expr ::= [expr.]ID( [ expr [[, expr]]* ] )
+    Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
+    if (inferred_expr_type == SELF_TYPE) {
+        inferred_expr_type = type_env.current_class->get_name();
+    }
+    std::map<Symbol, method_class*> method_env = 
+        type_env.class_table->get_class_method_map(inferred_expr_type);
+    if (method_env.count(this->name) == 0) {
+        type_env.class_table->semant_error(type_env.current_class)
+            << "Dispatch to undefined method " << this->name << "\n.";
+        return this->set_type(Object);
+    }
+    method_class* method = method_env.at(this->name);
+    Formals method_formals = method->get_formals();
+    if (method_formals->len() != this->actual->len()) {
+        type_env.class_table->semant_error(type_env.current_class)
+            << "Method " << this->name << " invoked with wrong number of arguments.\n";
+    }
+    for (
+        int i = method_formals->first(); 
+        method_formals->more(i); 
+        i = method_formals->next(i)
+    ) {
+        Symbol inferred_formal_type = this->actual->nth(i)->type_check(type_env)->get_type();
+        Formal original_formal = method_formals->nth(i);
+        Symbol original_formal_type = original_formal->get_type();
+        if (!type_env.class_table->is_subtype_of(inferred_formal_type, original_formal_type)) {
+            type_env.class_table->semant_error(type_env.current_class)
+                << "In call of method " << this->name << ", type " << this->name 
+                << " of parameter " << original_formal->get_name() 
+                << " does not conform to declared type " << original_formal_type << ".\n";
+        }
+    }
+    if (method->get_return_type() == SELF_TYPE) {
+        return this->set_type(inferred_expr_type);
+    }
+    return this->set_type(method->get_return_type());
 }
 Expression cond_class::type_check(TypeEnv type_env) {
     // cout << "cond_class::type_check" << endl;
@@ -891,7 +970,7 @@ Expression isvoid_class::type_check(TypeEnv type_env) {
 Expression no_expr_class::type_check(TypeEnv type_env) {
     // cout << "no_expr_class::type_check" << endl;
     // expr ::= /* no expr */
-    this->set_type(No_type);
+    return this->set_type(No_type);
 }
 Expression object_class::type_check(TypeEnv type_env) {
     // cout << "object_class::type_check" << endl;
@@ -903,7 +982,7 @@ Expression object_class::type_check(TypeEnv type_env) {
     }
     type_env.class_table->semant_error(type_env.current_class) 
         << "Undeclared identifier " << this->name << ".\n";
-    return this;
+    return this->set_type(Object);
 }
 
 /*   This is the entry point to the semantic checker.
