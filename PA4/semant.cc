@@ -835,7 +835,7 @@ Expression plus_class::type_check(TypeEnv type_env) {
     Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
     Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
     if (left_expr_type == Int && right_expr_type == Int) {
-        return this->set_type(Bool);
+        return this->set_type(Int);
     }
     type_env.class_table->semant_error(type_env.current_class) 
         << "non-Int arguments: " << left_expr_type << " + " << right_expr_type << ".\n";
@@ -847,7 +847,7 @@ Expression sub_class::type_check(TypeEnv type_env) {
     Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
     Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
     if (left_expr_type == Int && right_expr_type == Int) {
-        return this->set_type(Bool);
+        return this->set_type(Int);
     }
     type_env.class_table->semant_error(type_env.current_class) 
         << "non-Int arguments: " << left_expr_type << " - " << right_expr_type << ".\n";
@@ -859,7 +859,7 @@ Expression mul_class::type_check(TypeEnv type_env) {
     Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
     Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
     if (left_expr_type == Int && right_expr_type == Int) {
-        return this->set_type(Bool);
+        return this->set_type(Int);
     }
     type_env.class_table->semant_error(type_env.current_class) 
         << "non-Int arguments: " << left_expr_type << " * " << right_expr_type << ".\n";
@@ -871,7 +871,7 @@ Expression divide_class::type_check(TypeEnv type_env) {
     Symbol left_expr_type = this->e1->type_check(type_env)->get_type();
     Symbol right_expr_type = this->e2->type_check(type_env)->get_type();
     if (left_expr_type == Int && right_expr_type == Int) {
-        return this->set_type(Bool);
+        return this->set_type(Int);
     }
     type_env.class_table->semant_error(type_env.current_class) 
         << "non-Int arguments: " << left_expr_type << " / " << right_expr_type << ".\n";
