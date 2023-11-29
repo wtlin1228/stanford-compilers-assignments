@@ -477,6 +477,17 @@ void ClassTable::build_class_feature_map(Class_ c) {
         } else {
             method_class* method = static_cast<method_class*>(feature);
             Symbol method_name = method->get_name();
+            Formals method_formals = method->get_formals();
+            for (
+                int i = method_formals->first(); 
+                method_formals->more(i); 
+                i = method_formals->next(i)
+            ) {
+                if (method_formals->nth(i)->get_name() == self) {
+                    this->semant_error(c) << "'self' cannot be the name of a formal parameter.\n";
+                    raise_error();
+                }
+            }
             // Inherited methods must have exactly the same types for formal parameters 
             // and the return type.
             if (method_map.count(method_name) > 0) {
@@ -489,7 +500,6 @@ void ClassTable::build_class_feature_map(Class_ c) {
                     raise_error();
                 }
                 Formals original_method_formals = original_method->get_formals();
-                Formals method_formals = method->get_formals();
                 if (original_method_formals->len() != method_formals->len()) {
                     this->semant_error(c) 
                         << "In redefined method " << method_name
