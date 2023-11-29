@@ -418,11 +418,9 @@ void ClassTable::build_class_feature_map(Class_ c) {
         for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
             Feature feature = class_features->nth(i);
             if (feature->is_attr()) {
-                // std::cout << "this feature is a attribute" << std::endl;
                 attr_class* attr = static_cast<attr_class*>(feature);
                 attr_map[attr->get_name()] = attr;
             } else {
-                // std::cout << "this feature is a method" << std::endl;
                 method_class* method = static_cast<method_class*>(feature);
                 method_map[method->get_name()] = method;
             }
@@ -573,11 +571,15 @@ Feature method_class::type_check(TypeEnv type_env) {
 }
 Feature attr_class::type_check(TypeEnv type_env) {
     // cout << "attr_class::type_check" << " , name = " << this->name << endl;
+    // feature ::= ID : TYPE [ <- expr ]
     Symbol inferred_init_type = this->init->type_check(type_env)->get_type();
     if (inferred_init_type == SELF_TYPE) {
         inferred_init_type = type_env.current_class->get_name();
     }
-    if (!type_env.class_table->is_subtype_of(inferred_init_type, this->type_decl)) {
+    if (
+        inferred_init_type != No_type && 
+        !type_env.class_table->is_subtype_of(inferred_init_type, this->type_decl)
+    ) {
         type_env.class_table->semant_error(type_env.current_class) 
             << "Inferred type " << inferred_init_type 
             << " of initialization of attribute " << this->name
