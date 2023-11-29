@@ -756,7 +756,7 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
         }
     }
     if (method->get_return_type() == SELF_TYPE) {
-        return this->set_type(this->expr->type_check(type_env)->get_type());
+        return this->set_type(this->expr->get_type());
     }
     return this->set_type(method->get_return_type());
 }
