@@ -607,8 +607,7 @@ Formal formal_class::type_check(TypeEnv type_env) {
         type_env.class_table->semant_error(type_env.current_class) 
             << "Formal parameter " << this->name << " is multiply defined.\n";
     } else {
-        Symbol type_decl = this->type_decl;
-        type_env.object_env->addid(this->name, &type_decl);
+        type_env.object_env->addid(this->name, new Symbol(this->type_decl));
     }
     return this;
 }
@@ -621,8 +620,7 @@ Symbol branch_class::type_check(TypeEnv type_env) {
     // The identifier introduced by a branch of a case hides any variable or 
     // attribute definition for id visible in the containing scope.
     type_env.object_env->enterscope();
-    Symbol type_decl = this->type_decl;
-    type_env.object_env->addid(this->name, &type_decl);
+    type_env.object_env->addid(this->name, new Symbol(this->type_decl));
     Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
     type_env.object_env->exitscope();
     //////////////////////////////////////////////////////////////////
@@ -815,8 +813,7 @@ Expression let_class::type_check(TypeEnv type_env) {
     //                       Start Let Scope                        //
     //////////////////////////////////////////////////////////////////
     type_env.object_env->enterscope();
-    Symbol type_decl = this->type_decl;
-    type_env.object_env->addid(this->identifier, &type_decl);
+    type_env.object_env->addid(this->identifier, new Symbol(this->type_decl));
     Symbol inferred_body_type = this->body->type_check(type_env)->get_type();
     type_env.object_env->exitscope();
     //////////////////////////////////////////////////////////////////
@@ -1053,7 +1050,7 @@ void program_class::semant()
             ++it
         ) {
             Symbol type_decl = it->second->get_type();
-            type_env.object_env->addid(it->first, &type_decl);
+            type_env.object_env->addid(it->first, new Symbol(type_decl));
         }
         current_class->type_check(type_env);
         type_env.object_env->exitscope();
