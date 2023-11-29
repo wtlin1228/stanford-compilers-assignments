@@ -777,6 +777,7 @@ Expression loop_class::type_check(TypeEnv type_env) {
 Expression typcase_class::type_check(TypeEnv type_env) {
     // cout << "typcase_class::type_check" << endl;
     // expr ::= case expr of [[ID : TYPE => expr;]]+ esac
+    this->expr->type_check(type_env);
     std::set<Symbol> case_types;
     Symbol inferred_case_type = cases->nth(cases->first())->type_check(type_env);
     for (int i = this->cases->first(); this->cases->more(i); i = this->cases->next(i)) {
