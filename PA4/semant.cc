@@ -525,6 +525,9 @@ void ClassTable::build_class_feature_map(Class_ c) {
 }
 
 bool ClassTable::is_subtype_of(Symbol t1, Symbol t2) {
+    if (t1 == SELF_TYPE && t2 == SELF_TYPE) {
+        return true;
+    }
     if (t1 == SELF_TYPE || t2 == SELF_TYPE) {
         return false;
     }
@@ -705,12 +708,8 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
     if (inferred_expr_type == SELF_TYPE) {
         inferred_expr_type = type_env.current_class->get_name();
     }
-    // cout << "infer expr type " << inferred_expr_type << endl;
     std::map<Symbol, method_class*> method_env = 
         type_env.class_table->get_class_method_map(inferred_expr_type);
-
-    bool ttt = method_env.count(this->name) == 0;
-    // cout << "method_env.count(this->name) == 0 ? " << ttt << endl;
     if (method_env.count(this->name) == 0) {
         type_env.class_table->semant_error(type_env.current_class)
             << "Dispatch to undefined method " << this->name << ".\n";
@@ -728,7 +727,6 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
         i = method_formals->next(i)
     ) {
         Symbol inferred_formal_type = this->actual->nth(i)->type_check(type_env)->get_type();
-        // cout << "infer formal type " << inferred_formal_type << endl;
         Formal original_formal = method_formals->nth(i);
         Symbol original_formal_type = original_formal->get_type();
         if (!type_env.class_table->is_subtype_of(inferred_formal_type, original_formal_type)) {
