@@ -293,10 +293,9 @@ bool ClassTable::are_all_parent_classes_defined() {
             continue;
         }
         if (this->class_map.count(parent) == 0) {
-            this->semant_error() << "Class "
-                << child
-                << " inherits from an undefined class "
-                << parent
+            this->semant_error(this->class_map.at(child)) 
+                << "Class " << child << 
+                " inherits from an undefined class " << parent
                 << ".\n";
             return false;
         }
