@@ -572,14 +572,17 @@ Feature method_class::type_check(TypeEnv type_env) {
         this->formals->nth(i)->type_check(type_env);
     }
     Symbol inferred_return_type = this->expr->type_check(type_env)->get_type();
-    if (inferred_return_type == SELF_TYPE) {
-        inferred_return_type = type_env.current_class->get_name();
-    }
-    if (!type_env.class_table->is_subtype_of(inferred_return_type, this->return_type)) {
-        type_env.class_table->semant_error(type_env.current_class) 
-            << "Inferred return type " << inferred_return_type
-            << " of method " << this->name 
-            << " does not conform to declared return type " << this->return_type << ".\n";
+    Symbol declared_return_type = this->return_type;
+    if (!(declared_return_type == SELF_TYPE && inferred_return_type == SELF_TYPE)) {
+        if (inferred_return_type == SELF_TYPE) {
+            inferred_return_type = type_env.current_class->get_name();
+        }
+        if (!type_env.class_table->is_subtype_of(inferred_return_type, declared_return_type)) {
+            type_env.class_table->semant_error(type_env.current_class) 
+                << "Inferred return type " << inferred_return_type
+                << " of method " << this->name 
+                << " does not conform to declared return type " << declared_return_type << ".\n";
+        }
     }
     type_env.object_env->exitscope();
     //////////////////////////////////////////////////////////////////
