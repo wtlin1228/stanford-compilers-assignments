@@ -525,6 +525,9 @@ void ClassTable::build_class_feature_map(Class_ c) {
 }
 
 bool ClassTable::is_subtype_of(Symbol t1, Symbol t2) {
+    if (t1 == SELF_TYPE || t2 == SELF_TYPE) {
+        return false;
+    }
     if (t2 == Object) {
         return true;
     }
@@ -648,7 +651,7 @@ Expression assign_class::type_check(TypeEnv type_env) {
     }
 }
 Expression static_dispatch_class::type_check(TypeEnv type_env) {
-    // cout << "static_dispatch_class::type_check" << endl;
+    // cout << "static_dispatch_class::type_check, method name " << this->name << endl;
     // expr ::= expr@TYPE.ID( [ expr [[, expr]]* ] )
     Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
     if (inferred_expr_type == SELF_TYPE) {
@@ -663,7 +666,7 @@ Expression static_dispatch_class::type_check(TypeEnv type_env) {
     std::map<Symbol, method_class*> method_env = type_env.class_table->get_class_method_map(this->type_name);
     if (method_env.count(this->name) == 0) {
         type_env.class_table->semant_error(type_env.current_class)
-            << "Static dispatch to undefined method " << this->name << "\n.";
+            << "Static dispatch to undefined method " << this->name << ".\n";
         return this->set_type(Object);
     }
     method_class* method = method_env.at(this->name);
@@ -693,17 +696,21 @@ Expression static_dispatch_class::type_check(TypeEnv type_env) {
     return this->set_type(method->get_return_type());
 }
 Expression dispatch_class::type_check(TypeEnv type_env) {
-    // cout << "dispatch_class::type_check" << endl;
+    // cout << "dispatch_class::type_check, method name " << this->name << endl;
     // expr ::= [expr.]ID( [ expr [[, expr]]* ] )
     Symbol inferred_expr_type = this->expr->type_check(type_env)->get_type();
     if (inferred_expr_type == SELF_TYPE) {
         inferred_expr_type = type_env.current_class->get_name();
     }
+    // cout << "infer expr type " << inferred_expr_type << endl;
     std::map<Symbol, method_class*> method_env = 
         type_env.class_table->get_class_method_map(inferred_expr_type);
+
+    bool ttt = method_env.count(this->name) == 0;
+    // cout << "method_env.count(this->name) == 0 ? " << ttt << endl;
     if (method_env.count(this->name) == 0) {
         type_env.class_table->semant_error(type_env.current_class)
-            << "Dispatch to undefined method " << this->name << "\n.";
+            << "Dispatch to undefined method " << this->name << ".\n";
         return this->set_type(Object);
     }
     method_class* method = method_env.at(this->name);
@@ -718,6 +725,7 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
         i = method_formals->next(i)
     ) {
         Symbol inferred_formal_type = this->actual->nth(i)->type_check(type_env)->get_type();
+        // cout << "infer formal type " << inferred_formal_type << endl;
         Formal original_formal = method_formals->nth(i);
         Symbol original_formal_type = original_formal->get_type();
         if (!type_env.class_table->is_subtype_of(inferred_formal_type, original_formal_type)) {
@@ -951,7 +959,7 @@ Expression string_const_class::type_check(TypeEnv type_env) {
     return this->set_type(Str);
 }
 Expression new__class::type_check(TypeEnv type_env) {
-    // cout << "new__class::type_check" << endl;
+    // cout << "new__class::type_check, new " << this->type_name << endl;
     // expr ::= new TYPE
     if (type_env.class_table->has_class(this->type_name) || this->type_name == SELF_TYPE) {
         return this->set_type(this->type_name);
@@ -972,7 +980,7 @@ Expression no_expr_class::type_check(TypeEnv type_env) {
     return this->set_type(No_type);
 }
 Expression object_class::type_check(TypeEnv type_env) {
-    // cout << "object_class::type_check" << endl;
+    // cout << "object_class::type_check, name " << this->name << endl;
     // expr ::= ID
     if (this->name == self) {
         return this->set_type(SELF_TYPE);
@@ -1019,8 +1027,13 @@ void program_class::semant()
     //    (b) Check each expression for type correctness.
     //    (c) Annotate the AST with types.
     
-    for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        classtable->build_class_feature_map(classes->nth(i));
+    std::map<Symbol, Class_> class_map = classtable->get_class_map();
+    for (
+        std::map<Symbol, Class_>::iterator it = class_map.begin();
+        it != class_map.end();
+        ++it
+    ) {
+        classtable->build_class_feature_map(it->second);
     }
 
     TypeEnv type_env;

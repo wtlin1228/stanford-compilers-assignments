@@ -97,6 +97,7 @@ public:
   void add_class(Class_ c);
   Class_ get_class(Symbol class_name) { return class_map.at(class_name); }
   bool has_class(Symbol class_name) { return class_map.count(class_name) > 0; }
+  std::map<Symbol, Class_> get_class_map() { return class_map; }
   
   // for checking the graph is well-formed
   bool is_main_class_defined();
