@@ -755,9 +755,6 @@ Expression dispatch_class::type_check(TypeEnv type_env) {
                 << " does not conform to declared type " << original_formal_type << ".\n";
         }
     }
-    if (method->get_return_type() == SELF_TYPE) {
-        return this->set_type(inferred_expr_type);
-    }
     return this->set_type(method->get_return_type());
 }
 Expression cond_class::type_check(TypeEnv type_env) {
