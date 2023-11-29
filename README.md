@@ -2,7 +2,7 @@
 
 [StanfordOnline SOE.YCSCS1 - Compilers](https://learning.edx.org/course/course-v1:StanfordOnline+SOE.YCSCS1+3T2020/home)
 
-Design and build a compiler for Cool. Each assignment will cover one component of the compiler: 
+Design and build a compiler for Cool. Each assignment will cover one component of the compiler:
 
 - lexical analysis
 - parsing
@@ -13,7 +13,7 @@ Design and build a compiler for Cool. Each assignment will cover one component o
 
 Grading: 63/63
 
-[cool.flex](PA2/cool.flex) 
+[cool.flex](PA2/cool.flex)
 
 ### Resource
 
@@ -32,7 +32,7 @@ Grading: 70/70
 
 ## PA4 - Semantic Analyzer
 
-Grading: WIP
+Grading: 74/74
 
 [cool-tree.h](PA4/cool-tree.h)
 [semant.cc](PA4/semant.cc)
