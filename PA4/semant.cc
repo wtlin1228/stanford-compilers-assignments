@@ -649,9 +649,13 @@ Symbol branch_class::type_check(TypeEnv type_env) {
 Expression assign_class::type_check(TypeEnv type_env) {
     // cout << "assign_class::type_check" << endl;
     // assign ::= ID <- expr
+    if (this->name == self) {
+        type_env.class_table->semant_error(type_env.current_class) 
+            << "Cannot assign to 'self'.\n";
+        raise_error();
+    }
     Symbol left_type = *type_env.object_env->lookup(this->name);
     Symbol right_type = this->expr->type_check(type_env)->get_type();
-    // cout << "left type is " << left_type << ", right type is " << right_type << endl;
     if (right_type == SELF_TYPE) {
         right_type = type_env.current_class->get_name();
     }
