@@ -41,3 +41,11 @@ Grading: 74/74
 ### Resource
 
 - [The Cool Reference Manual, Chapter 12, Type Rules](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
+
+## PA5 - Code Generator
+
+### Resource
+
+- [The Cool Reference Manual, Chapter 13, Operational Semantics](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
+- [The Cool Runtime System](https://web.stanford.edu/class/cs143/materials/cool-runtime.pdf)
+- [MIPS architecture](https://en.wikipedia.org/wiki/MIPS_architecture)
