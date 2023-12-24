@@ -551,16 +551,16 @@ void CgenClassTable::code_constants() {
 //********************************************************
 //
 // Emit code for the class name table by traversing the class
-// tree with BST algorithm. Emitted code example:
+// tree with BST algorithm. Emitted code looks like:
 // ```
-//    class_nameTab:
-//       .word    str_const2
-//       .word    str_const3
-//       .word    str_const4
-//       .word    str_const5
-//       .word    str_const6
-//       .word    str_const7
-//       .word    str_const8
+//     class_nameTab:
+//         .word    str_const2
+//         .word    str_const3
+//         .word    str_const4
+//         .word    str_const5
+//         .word    str_const6
+//         .word    str_const7
+//         .word    str_const8
 // ```
 //
 //********************************************************
@@ -581,8 +581,43 @@ void CgenClassTable::code_class_name_table() {
     }
 }
 
+//********************************************************
+//
+// Emit code for the class object table by traversing the class
+// tree with BST algorithm. Emitted code looks like:
+// ```
+//     class_objTab:
+//         .word    Object_protObj
+//         .word    Object_init
+//         .word    IO_protObj
+//         .word    IO_init
+//         .word    Int_protObj
+//         .word    Int_init
+//         .word    Bool_protObj
+//         .word    Bool_init
+//         .word    String_protObj
+//         .word    String_init
+//         .word    Main_protObj
+//         .word    Main_init
+//         .word    A_protObj
+//         .word    A_init
+// ```
+//
+//********************************************************
 void CgenClassTable::code_class_object_table() {
-
+    str << CLASSOBJTAB << LABEL;                      // class_objTab:
+    std::queue<CgenNodeP> q;
+    q.push(root());
+    while(!q.empty()) {
+        CgenNodeP node = q.front();
+        q.pop();
+        char* c = node->get_name()->get_string();
+        str << WORD << c << PROTOBJ_SUFFIX << endl    //     .word    <Class>_protObj
+            << WORD << c << CLASSINIT_SUFFIX << endl; //     .word    <Class>_init 
+        for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+            q.push(l->hd());
+        }
+    }
 }
 
 void CgenClassTable::code_class_dispatch_tables() {
