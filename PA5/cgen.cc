@@ -492,21 +492,14 @@ void CgenClassTable::code_global_data() {
 //***************************************************
 
 void CgenClassTable::code_global_text() {
-    str << GLOBAL << HEAP_START << endl
-        << HEAP_START << LABEL << WORD << 0 << endl
-        << "\t.text" << endl
-        << GLOBAL;
-    emit_init_ref(idtable.add_string("Main"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("Int"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("String"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("Bool"), str);
-    str << endl << GLOBAL;
-    emit_method_ref(idtable.add_string("Main"), idtable.add_string("main"),
-                    str);
-    str << endl;
+    str << GLOBAL << HEAP_START << endl                                // heap_start: 
+        << HEAP_START << LABEL << WORD << 0 << endl                    //     .word    0 
+        << "\t.text" << endl;                                          //     .text 
+    str << GLOBAL; emit_init_ref(Main, str); str << endl;              //     .globl    Main_init 
+    str << GLOBAL; emit_init_ref(Int, str); str << endl;               //     .globl    Int_init
+    str << GLOBAL; emit_init_ref(Str, str); str << endl;               //     .globl    String_init
+    str << GLOBAL; emit_init_ref(Bool, str); str << endl;              //     .globl    Bool_init
+    str << GLOBAL; emit_method_ref(Main, main_meth, str); str << endl; //     .globl    Main.main
 }
 
 void CgenClassTable::code_bools(int boolclasstag) {
