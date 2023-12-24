@@ -623,47 +623,119 @@ void CgenClassTable::code_class_object_table() {
     }
 }
 
+//********************************************************
+//
+// Emit code for the class object table by traversing the class
+// tree with BST algorithm. Emitted code looks like:
+// ```
+//     Object_dispTab:
+//         .word    abort.Object
+//         .word    type_name.Object
+//         .word    copy.Object
+//     A_dispTab:
+//         .word    abort.Object
+//         .word    type_name.Object
+//         .word    copy.Object
+//         .word    f.A
+//         .word    g.A
+//     B_dispTab:
+//         .word    abort.Object
+//         .word    type_name.Object
+//         .word    copy.Object
+//         .word    f.B
+//         .word    g.A
+//         .word    h.B
+// ```
+//
+//********************************************************
 void CgenClassTable::code_class_dispatch_tables() {
-    std::map<Symbol, std::vector<std::string> > class_methods_table;
+    // class_methods_table = {
+    //     Object: (
+    //         {
+    //             abort: Object,
+    //             type_name: Object,
+    //             copy: Object,
+    //         },
+    //         [abort, type_name, copy]
+    //     ),
+    //     A: (
+    //         {
+    //             abort: Object,
+    //             type_name: Object,
+    //             copy: Object,
+    //             f: A,
+    //             g: A,
+    //         },
+    //         [abort, type_name, copy, f, g]
+    //     ),
+    //     B: (
+    //         {
+    //             abort: Object,
+    //             type_name: Object,
+    //             copy: Object,
+    //             f: B,
+    //             g: A,
+    //             h: B,
+    //         },
+    //         [abort, type_name, copy, f, g, h]
+    //     ),
+    // }
+    std::map<
+        Symbol, // class name
+        std::pair<
+            std::map<Symbol, Symbol>, // (method name, class name)
+            std::vector<Symbol> // methods order
+        >
+    > class_methods_table;
+
     std::queue<CgenNodeP> q;
     q.push(root());
     while(!q.empty()) {
         CgenNodeP node = q.front();
         q.pop();
 
-        std::vector<std::string> methods;
         Symbol class_name = node->get_name();
+        std::map<Symbol, Symbol> methods;
+        std::vector<Symbol> methods_order;
 
         // append parent's methods
+        // note: parent is guaranteed processed before children due to BST
         Symbol parent_class_name = node->get_parentnd()->get_name();
         if (class_methods_table.count(parent_class_name) > 0) {
-            std::vector<std::string> parent_methods = class_methods_table[parent_class_name];
-            for (std::vector<std::string>::iterator it = parent_methods.begin() ; it != parent_methods.end(); ++it) {
-                methods.push_back(*it);
+            std::map<Symbol, Symbol>& parent_methods = class_methods_table[parent_class_name].first;
+            for (std::map<Symbol, Symbol>::iterator it = parent_methods.begin(); it != parent_methods.end(); ++it) {
+                methods[it->first] = it->second;
+            }
+            std::vector<Symbol>& parent_methods_order = class_methods_table[parent_class_name].second;
+            for (std::vector<Symbol>::iterator it = parent_methods_order.begin() ; it != parent_methods_order.end(); ++it) {
+                methods_order.push_back(*it);
             }
         }
 
-        // append its own methods
+        // append its own methods or override the inherited ones
         Features class_features = node->get_features();
         for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
             Feature feature = class_features->nth(i);
             if (feature->is_method()) {
                 method_class* method = static_cast<method_class*>(feature);
-                std::string s_class_name = class_name->get_string();
-                std::string s_method_name = method->get_name()->get_string();
-                methods.push_back(s_class_name + "." + s_method_name);
+                Symbol method_name = method->get_name();
+                if (methods.count(method_name) == 0) {
+                    methods_order.push_back(method_name);
+                }
+                methods[method_name] = class_name;
             }
         }
 
-        // store methods to table
-        class_methods_table[class_name] = methods;
+        // store (methods, methods_order) to table
+        class_methods_table[class_name] = std::make_pair(methods, methods_order);
 
         // emit code for dispatch table
-        str << class_name << DISPTAB_SUFFIX << LABEL; // <Class>_dispTab:
-        for (std::vector<std::string>::iterator it = methods.begin() ; it != methods.end(); ++it) {
-            str << WORD << *it << endl;               //     .word    <Class>.<Method>
+        str << class_name << DISPTAB_SUFFIX << LABEL;          // <Class>_dispTab:
+        for (std::vector<Symbol>::iterator it = methods_order.begin() ; it != methods_order.end(); ++it) {
+            str << WORD << *it << "." << methods[*it] << endl; //     .word    <Class>.<Method>
         }
 
+        // append children for furthur traversal
         for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
             q.push(l->hd());
         }
