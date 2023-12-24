@@ -655,7 +655,7 @@ void CgenClassTable::code_class_dispatch_tables() {
         q.pop();
 
         Symbol class_name = node->get_name();
-        std::vector<Symbol>& method_order_vec = get_methods(class_name);
+        std::vector<Symbol> method_order_vec = get_methods(class_name);
         
         // emit code for dispatch table
         str << class_name << DISPTAB_SUFFIX << LABEL;      // <Class>_dispTab:
@@ -919,14 +919,14 @@ void CgenClassTable::build_class_lookup_tables() {
         Symbol parent_class_name = node->get_parentnd()->get_name();
         if (class_attrs_table.count(parent_class_name) > 0) {
             // attr
-            std::vector<Symbol>& parent_attr_order_vec = get_attrs(parent_class_name);
+            std::vector<Symbol> parent_attr_order_vec = get_attrs(parent_class_name);
             for (size_t i = 0; i < parent_attr_order_vec.size(); ++i) {
                 Symbol attr_name = parent_attr_order_vec[i];
                 attr_index_map[attr_name] = get_attr_index(parent_class_name, attr_name);
                 attr_order_vec.push_back(attr_name);
             }
             // method
-            std::vector<Symbol>& parent_method_order_vec = get_methods(parent_class_name);
+            std::vector<Symbol> parent_method_order_vec = get_methods(parent_class_name);
             for (size_t i = 0; i < parent_method_order_vec.size(); ++i) {
                 Symbol method_name = parent_method_order_vec[i];
                 method_order_vec.push_back(method_name);

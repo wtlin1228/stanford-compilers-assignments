@@ -34,9 +34,9 @@ private:
 // lookup tables
    void build_class_lookup_tables();
    int get_attr_index(Symbol c, Symbol attr) { return class_attr_index_table[c][attr]; };
-   std::vector<Symbol>& get_attrs(Symbol c) { return class_attrs_table[c]; };
+   std::vector<Symbol> get_attrs(Symbol c) { return class_attrs_table[c]; };
    int get_method_index(Symbol c, Symbol method) { return class_method_index_table[c][method]; };
-   std::vector<Symbol>& get_methods(Symbol c) { return class_methods_table[c]; };
+   std::vector<Symbol> get_methods(Symbol c) { return class_methods_table[c]; };
    Symbol get_method_owned_by(Symbol c, Symbol method) { return class_method_owned_by_table[c][method]; };
    method_class* get_method_definition(Symbol c, Symbol method) { return class_method_definition_table[c][method]; };
 
