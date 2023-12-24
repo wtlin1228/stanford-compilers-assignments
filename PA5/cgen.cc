@@ -25,6 +25,9 @@
 #include "cgen.h"
 #include "cgen_gc.h"
 #include <queue>
+#include <map>
+#include <vector>
+#include <string>
 
 extern void emit_string_constant(ostream &str, char *s);
 extern int cgen_debug;
@@ -621,7 +624,50 @@ void CgenClassTable::code_class_object_table() {
 }
 
 void CgenClassTable::code_class_dispatch_tables() {
+    std::map<Symbol, std::vector<std::string> > class_methods_table;
+    std::queue<CgenNodeP> q;
+    q.push(root());
+    while(!q.empty()) {
+        CgenNodeP node = q.front();
+        q.pop();
 
+        std::vector<std::string> methods;
+        Symbol class_name = node->get_name();
+
+        // append parent's methods
+        Symbol parent_class_name = node->get_parentnd()->get_name();
+        if (class_methods_table.count(parent_class_name) > 0) {
+            std::vector<std::string> parent_methods = class_methods_table[parent_class_name];
+            for (std::vector<std::string>::iterator it = parent_methods.begin() ; it != parent_methods.end(); ++it) {
+                methods.push_back(*it);
+            }
+        }
+
+        // append its own methods
+        Features class_features = node->get_features();
+        for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
+            Feature feature = class_features->nth(i);
+            if (feature->is_method()) {
+                method_class* method = static_cast<method_class*>(feature);
+                std::string s_class_name = class_name->get_string();
+                std::string s_method_name = method->get_name()->get_string();
+                methods.push_back(s_class_name + "." + s_method_name);
+            }
+        }
+
+        // store methods to table
+        class_methods_table[class_name] = methods;
+
+        // emit code for dispatch table
+        str << class_name << DISPTAB_SUFFIX << LABEL; // <Class>_dispTab:
+        for (std::vector<std::string>::iterator it = methods.begin() ; it != methods.end(); ++it) {
+            str << WORD << *it << endl;               //     .word    <Class>.<Method>
+        }
+
+        for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+            q.push(l->hd());
+        }
+    }
 }
 
 void CgenClassTable::code_class_prototype_tables() {
