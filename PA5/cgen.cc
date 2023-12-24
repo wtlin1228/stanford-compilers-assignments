@@ -571,7 +571,6 @@ void CgenClassTable::code_class_name_table() {
     while(!q.empty()) {
         CgenNodeP node = q.front();
         q.pop();
-        if (cgen_debug) cout << "bst: " << node->get_name() << endl;
         StringEntryP s = stringtable.lookup_string(
             node->get_name()->get_string()
         );
