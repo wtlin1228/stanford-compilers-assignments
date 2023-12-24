@@ -24,6 +24,7 @@
 
 #include "cgen.h"
 #include "cgen_gc.h"
+#include <queue>
 
 extern void emit_string_constant(ostream &str, char *s);
 extern int cgen_debug;
@@ -547,11 +548,37 @@ void CgenClassTable::code_constants() {
     code_bools(boolclasstag);
 }
 
+//********************************************************
+//
+// Emit code for the class name table by traversing the class
+// tree with BST algorithm. Emitted code example:
+// ```
+//    class_nameTab:
+//       .word    str_const2
+//       .word    str_const3
+//       .word    str_const4
+//       .word    str_const5
+//       .word    str_const6
+//       .word    str_const7
+//       .word    str_const8
+// ```
+//
+//********************************************************
 void CgenClassTable::code_class_name_table() {
     str << CLASSNAMETAB << LABEL;                   // class_nameTab:
-    for (List<CgenNode> *l = nds; l; l = l->tl()) {
-        StringEntryP s = stringtable.lookup_string(l->hd()->get_name()->get_string());
+    std::queue<CgenNodeP> q;
+    q.push(root());
+    while(!q.empty()) {
+        CgenNodeP node = q.front();
+        q.pop();
+        if (cgen_debug) cout << "bst: " << node->get_name() << endl;
+        StringEntryP s = stringtable.lookup_string(
+            node->get_name()->get_string()
+        );
         str << WORD; s->code_ref(str); str << endl; //     .word    str_const<Index> 
+        for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+            q.push(l->hd());
+        }
     }
 }
 
