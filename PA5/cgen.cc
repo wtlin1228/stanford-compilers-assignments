@@ -548,7 +548,11 @@ void CgenClassTable::code_constants() {
 }
 
 void CgenClassTable::code_class_name_table() {
-
+    str << CLASSNAMETAB << LABEL;                   // class_nameTab:
+    for (List<CgenNode> *l = nds; l; l = l->tl()) {
+        StringEntryP s = stringtable.lookup_string(l->hd()->get_name()->get_string());
+        str << WORD; s->code_ref(str); str << endl; //     .word    str_const<Index> 
+    }
 }
 
 void CgenClassTable::code_class_object_table() {
@@ -791,6 +795,7 @@ void CgenClassTable::code() {
     if (cgen_debug) cout << "coding class protoptye tables" << endl;
     code_class_prototype_tables();
 
+    // heap_start:
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
 
