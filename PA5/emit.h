@@ -108,7 +108,7 @@
 //
 // class tags
 //
-#define CLASS_TAG_OFFSET   5
+#define NEXT_CLASS_TAG   5
 #define STRING_CLASS_TAG 4
 #define BOOL_CLASS_TAG   3
 #define INT_CLASS_TAG    2

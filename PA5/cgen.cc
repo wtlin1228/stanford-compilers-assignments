@@ -554,11 +554,36 @@ void CgenClassTable::code_constants() {
     code_bools(boolclasstag);
 }
 
+void CgenClassTable::code_class_name_table() {
+
+}
+
+void CgenClassTable::code_class_object_table() {
+
+}
+
+void CgenClassTable::code_class_dispatch_tables() {
+
+}
+
+void CgenClassTable::code_class_prototype_tables() {
+
+}
+
+void CgenClassTable::code_class_init_methods() {
+
+}
+
+void CgenClassTable::code_class_methods() {
+
+}
+
 CgenClassTable::CgenClassTable(Classes classes, ostream &s)
     : nds(NULL), str(s) {
     stringclasstag = STRING_CLASS_TAG;
     intclasstag = BOOL_CLASS_TAG;
     boolclasstag = INT_CLASS_TAG;
+    next_classtag = NEXT_CLASS_TAG;
 
     enterscope();
     if (cgen_debug) cout << "Building CgenClassTable" << endl;
@@ -757,19 +782,32 @@ void CgenClassTable::code() {
     if (cgen_debug) cout << "coding constants" << endl;
     code_constants();
 
-    //                 Add your code to emit
-    //                   - prototype objects
-    //                   - class_nameTab
-    //                   - dispatch tables
-    //
+    // TODO: 1. class_nameTab:
+    if (cgen_debug) cout << "coding class name table" << endl;
+    code_class_name_table();
+
+    // TODO: 2. class_objTab:
+    if (cgen_debug) cout << "coding class object table" << endl;
+    code_class_object_table();
+    
+    // TODO: 3. <Class Name>_dispTab for all classes
+    if (cgen_debug) cout << "coding class dispatch tables" << endl;
+    code_class_dispatch_tables();
+
+    // TODO: 4. <Class Name>_propTab for all classes
+    if (cgen_debug) cout << "coding class protoptye tables" << endl;
+    code_class_prototype_tables();
 
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
 
-    //                 Add your code to emit
-    //                   - object initializer
-    //                   - the class methods
-    //                   - etc...
+    // TODO: 5. <Class Name>_init for all classes
+    if (cgen_debug) cout << "coding class init methods" << endl;
+    code_class_init_methods();
+
+    // TODO: 6. <Class Name>.<Method Name> for all methods of each class
+    if (cgen_debug) cout << "coding class methods" << endl;
+    code_class_methods();
 }
 
 CgenNodeP CgenClassTable::root() { return probe(Object); }
