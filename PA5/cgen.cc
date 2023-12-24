@@ -457,20 +457,20 @@ void CgenClassTable::code_global_data() {
     Symbol integer = idtable.lookup_string(INTNAME);
     Symbol boolc = idtable.lookup_string(BOOLNAME);
 
-    str << "\t.data\n" << ALIGN; // .data
-                                 // .align    2
     //
     // The following global names must be defined first.
     //
-    str << GLOBAL << CLASSNAMETAB << endl;                      // .globl    class_nameTab.globl	class_nameTab
-    str << GLOBAL; emit_protobj_ref(main, str); str << endl;    // .globl    Main_protObj
-    str << GLOBAL; emit_protobj_ref(integer, str); str << endl; // .globl    Int_protObj
-    str << GLOBAL; emit_protobj_ref(string, str); str << endl;  // .globl    String_protObj
-    str << GLOBAL; falsebool.code_ref(str); str << endl;        // .globl    bool_const0
-    str << GLOBAL; truebool.code_ref(str); str << endl;         // .globl    bool_const1
-    str << GLOBAL << INTTAG << endl;                            // .globl    _int_tag
-    str << GLOBAL << BOOLTAG << endl;                           // .globl    _bool_tag
-    str << GLOBAL << STRINGTAG << endl;                         // .globl    _string_tag
+    str << "\t.data\n";                                         //     .data
+    str << ALIGN;                                               //     .align    2
+    str << GLOBAL << CLASSNAMETAB << endl;                      //     .globl    class_nameTab
+    str << GLOBAL; emit_protobj_ref(main, str); str << endl;    //     .globl    Main_protObj
+    str << GLOBAL; emit_protobj_ref(integer, str); str << endl; //     .globl    Int_protObj
+    str << GLOBAL; emit_protobj_ref(string, str); str << endl;  //     .globl    String_protObj
+    str << GLOBAL; falsebool.code_ref(str); str << endl;        //     .globl    bool_const0
+    str << GLOBAL; truebool.code_ref(str); str << endl;         //     .globl    bool_const1
+    str << GLOBAL << INTTAG << endl;                            //     .globl    _int_tag
+    str << GLOBAL << BOOLTAG << endl;                           //     .globl    _bool_tag
+    str << GLOBAL << STRINGTAG << endl;                         //     .globl    _string_tag
 
     //
     // We also need to know the tag of the Int, String, and Bool classes
