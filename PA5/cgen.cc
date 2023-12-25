@@ -1077,19 +1077,19 @@ void CgenClassTable::code() {
 
     build_cgen_node_map();
 
-    // TODO: 1. class_nameTab:
+    // 1. class_nameTab:
     if (cgen_debug) cout << "coding class name table" << endl;
     code_class_name_table();
 
-    // TODO: 2. class_objTab:
+    // 2. class_objTab:
     if (cgen_debug) cout << "coding class object table" << endl;
     code_class_object_table();
     
-    // TODO: 3. <Class Name>_dispTab for all classes
+    // 3. <Class Name>_dispTab for all classes
     if (cgen_debug) cout << "coding class dispatch tables" << endl;
     code_class_dispatch_tables();
 
-    // TODO: 4. <Class Name>_propTab for all classes
+    // 4. <Class Name>_propTab for all classes
     if (cgen_debug) cout << "coding class protoptye tables" << endl;
     code_class_prototype_tables();
 
