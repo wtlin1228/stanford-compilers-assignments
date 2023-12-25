@@ -655,12 +655,12 @@ void CgenClassTable::code_class_dispatch_tables() {
         q.pop();
 
         Symbol class_name = node->get_name();
-        std::vector<Symbol> method_order_vec = get_methods(class_name);
+        std::vector<Symbol> method_order_vec = node->get_methods();
         
         // emit code for dispatch table
         str << class_name << DISPTAB_SUFFIX << LABEL;      // <Class>_dispTab:
         for (std::vector<Symbol>::iterator it = method_order_vec.begin() ; it != method_order_vec.end(); ++it) {
-            Symbol owned_by = get_method_owned_by(class_name, *it);
+            Symbol owned_by = node->get_method_owned_by(*it);
             str << WORD << owned_by << "." << *it << endl; //     .word    <Class>.<Method>
         }
 
@@ -692,19 +692,27 @@ void CgenClassTable::code_class_dispatch_tables() {
 //
 //********************************************************
 void CgenClassTable::code_class_prototype_tables() {
-    std::queue<CgenNodeP> q;
-    q.push(root());
-    while(!q.empty()) {
-        CgenNodeP node = q.front();
-        q.pop();
+    // std::queue<CgenNodeP> q;
+    // q.push(root());
+    // while(!q.empty()) {
+    //     CgenNodeP node = q.front();
+    //     q.pop();
 
-        
+    //     Symbol class_name = node->get_name();
+    //     std::vector<Symbol> attr_order_vec = get_attrs(class_name);
 
-        // append children for furthur traversal
-        for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
-            q.push(l->hd());
-        }
-    }
+    //     // emit code for dispatch table
+    //     str << class_name << PROTOBJ_SUFFIX << LABEL;      // <Class>_protObj:
+    //     for (std::vector<Symbol>::iterator it = attr_order_vec.begin() ; it != attr_order_vec.end(); ++it) {
+    //         Symbol owned_by = get_method_owned_by(class_name, *it);
+    //         str << WORD << owned_by << "." << *it << endl; //     .word    <Class>.<Method>
+    //     }
+
+    //     // append children for furthur traversal
+    //     for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+    //         q.push(l->hd());
+    //     }
+    // }
 }
 
 void CgenClassTable::code_class_init_methods() {
@@ -889,52 +897,61 @@ void CgenClassTable::build_inheritance_tree() {
 
 //********************************************************
 //
-// Build those lookup tables with BST algorithm:
-//     - class_attr_index_table
-//     - class_attrs_table
-//     - class_method_index_table
-//     - class_methods_table
-//     - class_method_owned_by_table
-//     - class_method_definition_table
+// Build cgen node map with BST algorithm.
+// Set the following attributes for each node:
+//     - is_primitive_type
+//     - tag
+//     - size
+//     - attrs
+//     - attr_index
+//     - attr_definition
+//     - attr_owned_by
+//     - methods
+//     - method_index
+//     - method_definition
+//     - method_owned_by
 //
 //********************************************************
-void CgenClassTable::build_class_lookup_tables() {
+void CgenClassTable::build_cgen_node_map() {
     std::queue<CgenNodeP> q;
     q.push(root());
     while(!q.empty()) {
         CgenNodeP node = q.front();
+        Symbol class_name = node->get_name();
+        CgenNodeP parent_node = node->get_parentnd();
+        
         q.pop();
 
+        // attr
         std::map<Symbol, int> attr_index_map;
         std::vector<Symbol> attr_order_vec;
+        std::map<Symbol, Symbol> attr_owned_by_map;
+        std::map<Symbol, attr_class*> attr_definition_map;
+        // method
         std::map<Symbol, int> method_index_map;
         std::vector<Symbol> method_order_vec;
         std::map<Symbol, Symbol> method_owned_by_map;
         std::map<Symbol, method_class*> method_definition_map;
 
-        Symbol class_name = node->get_name();
-
         // append parent's attrs and methods
         // note: parent is guaranteed processed before children due to BST
-        Symbol parent_class_name = node->get_parentnd()->get_name();
-        if (class_attrs_table.count(parent_class_name) > 0) {
-            // attr
-            std::vector<Symbol> parent_attr_order_vec = get_attrs(parent_class_name);
-            for (size_t i = 0; i < parent_attr_order_vec.size(); ++i) {
-                Symbol attr_name = parent_attr_order_vec[i];
-                attr_index_map[attr_name] = get_attr_index(parent_class_name, attr_name);
-                attr_order_vec.push_back(attr_name);
-            }
-            // method
-            std::vector<Symbol> parent_method_order_vec = get_methods(parent_class_name);
-            for (size_t i = 0; i < parent_method_order_vec.size(); ++i) {
-                Symbol method_name = parent_method_order_vec[i];
-                method_order_vec.push_back(method_name);
-                method_index_map[method_name] = get_method_index(parent_class_name, method_name);
-                method_owned_by_map[method_name] = get_method_owned_by(parent_class_name, method_name);
-            }
+        // attr
+        std::vector<Symbol> parent_attr_order_vec = parent_node->get_attrs();
+        for (size_t i = 0; i < parent_attr_order_vec.size(); ++i) {
+            Symbol attr_name = parent_attr_order_vec[i];
+            attr_order_vec.push_back(attr_name);
+            attr_index_map[attr_name] = parent_node->get_attr_index(attr_name);
+            attr_owned_by_map[attr_name] = parent_node->get_attr_owned_by(attr_name);
         }
-
+        // method
+        std::vector<Symbol> parent_method_order_vec = parent_node->get_methods();
+        for (size_t i = 0; i < parent_method_order_vec.size(); ++i) {
+            Symbol method_name = parent_method_order_vec[i];
+            method_order_vec.push_back(method_name);
+            method_index_map[method_name] = parent_node->get_method_index(method_name);
+            method_owned_by_map[method_name] = parent_node->get_method_owned_by(method_name);
+        }
+        
         // append its own methods or override the inherited ones
         Features class_features = node->get_features();
         for (int i = class_features->first(); class_features->more(i); i = class_features->next(i)) {
@@ -947,6 +964,8 @@ void CgenClassTable::build_class_lookup_tables() {
                     attr_index_map[attr_name] = attr_order_vec.size(); // index starts from 0
                     attr_order_vec.push_back(attr_name);
                 }
+                attr_owned_by_map[attr_name] = class_name; // override
+                attr_definition_map[attr_name] = attr;
             } else {
                 // method
                 method_class* method = static_cast<method_class*>(feature);
@@ -960,12 +979,45 @@ void CgenClassTable::build_class_lookup_tables() {
             }
         }
 
-        class_attr_index_table[class_name] = attr_index_map;
-        class_attrs_table[class_name] = attr_order_vec;
-        class_method_index_table[class_name] = method_index_map;
-        class_methods_table[class_name] = method_order_vec;
-        class_method_owned_by_table[class_name] = method_owned_by_map;
-        class_method_definition_table[class_name] = method_definition_map;
+        node->set_is_primitive_type(
+            class_name == Object ||
+            class_name == IO ||
+            class_name == Int || 
+            class_name == Bool || 
+            class_name == Str
+        );
+        if (class_name == Object) {
+            node->set_tag(OBJECT_CLASS_TAG);
+        } else if (class_name == IO) {
+            node->set_tag(IO_CLASS_TAG);
+        } else if (class_name == Int) {
+            node->set_tag(INT_CLASS_TAG);
+        } else if (class_name == Bool) {
+            node->set_tag(BOOL_CLASS_TAG);
+        } else if (class_name == Str) {
+            node->set_tag(STRING_CLASS_TAG);
+        } else {
+            node->set_tag(next_classtag);
+            next_classtag++;
+        }
+        node->set_size(
+            1 + // tag
+            1 + // size
+            1 + // dispatch table
+            attr_order_vec.size() // attributes
+        );
+        // attr
+        node->set_attr_index(attr_index_map);
+        node->set_attrs(attr_order_vec);
+        node->set_attr_owned_by(attr_owned_by_map);
+        node->set_attr_definition(attr_definition_map);
+        // method
+        node->set_method_index(method_index_map);
+        node->set_methods(method_order_vec);
+        node->set_method_owned_by(method_owned_by_map);
+        node->set_method_definition(method_definition_map);
+
+        cgen_node_map[class_name] = node;
 
         // append children for furthur traversal
         for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
@@ -1006,7 +1058,7 @@ void CgenClassTable::code() {
     if (cgen_debug) cout << "coding constants" << endl;
     code_constants();
 
-    build_class_lookup_tables();
+    build_cgen_node_map();
 
     // TODO: 1. class_nameTab:
     if (cgen_debug) cout << "coding class name table" << endl;

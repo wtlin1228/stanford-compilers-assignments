@@ -24,21 +24,9 @@ private:
    int intclasstag;
    int boolclasstag;
    int next_classtag;
-   std::map<Symbol, std::map<Symbol, int> >           class_attr_index_table;
-   std::map<Symbol, std::vector<Symbol> >             class_attrs_table;
-   std::map<Symbol, std::map<Symbol, int> >           class_method_index_table;
-   std::map<Symbol, std::vector<Symbol> >             class_methods_table;
-   std::map<Symbol, std::map<Symbol, Symbol> >        class_method_owned_by_table;
-   std::map<Symbol, std::map<Symbol, method_class*> > class_method_definition_table;
+   std::map<Symbol, CgenNodeP> cgen_node_map;
 
-// lookup tables
-   void build_class_lookup_tables();
-   int get_attr_index(Symbol c, Symbol attr) { return class_attr_index_table[c][attr]; };
-   std::vector<Symbol> get_attrs(Symbol c) { return class_attrs_table[c]; };
-   int get_method_index(Symbol c, Symbol method) { return class_method_index_table[c][method]; };
-   std::vector<Symbol> get_methods(Symbol c) { return class_methods_table[c]; };
-   Symbol get_method_owned_by(Symbol c, Symbol method) { return class_method_owned_by_table[c][method]; };
-   method_class* get_method_definition(Symbol c, Symbol method) { return class_method_definition_table[c][method]; };
+   void build_cgen_node_map();
 
 // The following methods emit code for
 // constants and global declarations.
@@ -81,6 +69,21 @@ private:
    List<CgenNode> *children;                  // Children of class
    Basicness basic_status;                    // `Basic' if class is basic
                                               // `NotBasic' otherwise
+   
+   bool is_primitive_type;
+// object layout
+   int tag;
+   int size;
+// attrs
+   std::vector<Symbol>             attrs;
+   std::map<Symbol, int>           attr_index;
+   std::map<Symbol, attr_class*>   attr_definition;
+   std::map<Symbol, Symbol>        attr_owned_by;
+// methods
+   std::vector<Symbol>             methods;
+   std::map<Symbol, int>           method_index;
+   std::map<Symbol, method_class*> method_definition;
+   std::map<Symbol, Symbol>        method_owned_by;
 
 public:
    CgenNode(Class_ c,
@@ -92,6 +95,42 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
+
+// getters and setters
+   bool get_is_primitive_type()       { return is_primitive_type; };
+   void set_is_primitive_type(bool b) { is_primitive_type = b; };
+
+   int  get_tag()      { return tag; };
+   void set_tag(int t) { tag = t; };
+
+   int  get_size()      { return size; };
+   void set_size(int s) { size = s; };
+
+// attrs
+   std::vector<Symbol> get_attrs()                      { return attrs; };
+   void                set_attrs(std::vector<Symbol> m) { attrs = m; };
+   
+   int  get_attr_index(Symbol attr)             { return attr_index[attr]; };
+   void set_attr_index(std::map<Symbol, int> m) { attr_index = m; };
+   
+   attr_class* get_attr_definition(Symbol attr)                     { return attr_definition[attr]; };
+   void        set_attr_definition(std::map<Symbol, attr_class*> m) { attr_definition = m; };
+   
+   Symbol get_attr_owned_by(Symbol attr)                { return attr_owned_by[attr]; };
+   void   set_attr_owned_by(std::map<Symbol, Symbol> m) { attr_owned_by = m; };
+
+// methods
+   std::vector<Symbol> get_methods()                      { return methods; };
+   void                set_methods(std::vector<Symbol> m) { methods = m; };
+
+   int  get_method_index(Symbol method)           { return method_index[method]; };
+   void set_method_index(std::map<Symbol, int> m) { method_index = m; };
+
+   method_class* get_method_definition(Symbol method)                     { return method_definition[method]; };
+   void          set_method_definition(std::map<Symbol, method_class*> m) { method_definition = m; };
+
+   Symbol get_method_owned_by(Symbol method)              { return method_owned_by[method]; };
+   void   set_method_owned_by(std::map<Symbol, Symbol> m) { method_owned_by = m; };
 };
 
 class BoolConst 
