@@ -692,27 +692,44 @@ void CgenClassTable::code_class_dispatch_tables() {
 //
 //********************************************************
 void CgenClassTable::code_class_prototype_tables() {
-    // std::queue<CgenNodeP> q;
-    // q.push(root());
-    // while(!q.empty()) {
-    //     CgenNodeP node = q.front();
-    //     q.pop();
+    std::queue<CgenNodeP> q;
+    q.push(root());
+    while(!q.empty()) {
+        CgenNodeP node = q.front();
+        q.pop();
 
-    //     Symbol class_name = node->get_name();
-    //     std::vector<Symbol> attr_order_vec = get_attrs(class_name);
+        Symbol class_name = node->get_name();
+        std::vector<Symbol> attr_order_vec = node->get_attrs();
 
-    //     // emit code for dispatch table
-    //     str << class_name << PROTOBJ_SUFFIX << LABEL;      // <Class>_protObj:
-    //     for (std::vector<Symbol>::iterator it = attr_order_vec.begin() ; it != attr_order_vec.end(); ++it) {
-    //         Symbol owned_by = get_method_owned_by(class_name, *it);
-    //         str << WORD << owned_by << "." << *it << endl; //     .word    <Class>.<Method>
-    //     }
+        // emit code for dispatch table
+        str << WORD << -1 << endl;                            //     .word    -1
+        str << class_name << PROTOBJ_SUFFIX << LABEL;         // <Class>_protObj:
+        str << WORD << node->get_tag() << endl;               //     .word    <Class Tag>
+        str << WORD << node->get_size() << endl;              //     .word    <Object Size>
+        str << WORD << class_name << DISPTAB_SUFFIX << endl;  //     .word    <Class>_dispTab
+        for (std::vector<Symbol>::iterator it = attr_order_vec.begin() ; it != attr_order_vec.end(); ++it) {
+            Symbol attr_owned_by = node->get_attr_owned_by(*it);
+            Symbol attr_type = cgen_node_map[attr_owned_by]->get_attr_definition(*it)->get_type();
+            if (attr_type == Int) {
+                //                                                   .word    <Default Int>
+                str << WORD; inttable.lookup_string("0")->code_ref(str); str << endl; 
+            } else if (attr_type == Str) {
+                //                                                   .word    <Default Str>
+                str << WORD; stringtable.lookup_string("")->code_ref(str); str << endl;
+            } else if (attr_type == Bool) {
+                //                                                   .word    <Default Bool>
+                str << WORD; falsebool.code_ref(str); str << endl;
+            } else {
+                //                                                   .word    0
+                str << WORD << 0 << endl;
+            }
+        }
 
-    //     // append children for furthur traversal
-    //     for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
-    //         q.push(l->hd());
-    //     }
-    // }
+        // append children for furthur traversal
+        for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+            q.push(l->hd());
+        }
+    }
 }
 
 void CgenClassTable::code_class_init_methods() {

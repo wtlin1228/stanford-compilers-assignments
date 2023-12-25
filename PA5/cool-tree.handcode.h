@@ -89,7 +89,9 @@ Symbol get_name() { return name; }
 #define attr_EXTRAS                 \
 bool is_method() { return false; }  \
 bool is_attr() { return true; }     \
-Symbol get_name() { return name; } 
+Symbol get_name() { return name; }  \
+Symbol get_type() { return type_decl; } 
+
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0;
