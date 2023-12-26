@@ -131,6 +131,10 @@ public:
 
    Symbol get_method_owned_by(Symbol method)              { return method_owned_by[method]; };
    void   set_method_owned_by(std::map<Symbol, Symbol> m) { method_owned_by = m; };
+
+// helpers
+   bool owns_attr(Symbol attr) { return attr_owned_by[attr] == name; };
+   int get_attr_offset(Symbol attr) { return 3 + attr_index[attr]; };
 };
 
 class BoolConst 

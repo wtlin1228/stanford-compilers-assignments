@@ -732,8 +732,67 @@ void CgenClassTable::code_class_prototype_tables() {
     }
 }
 
+//********************************************************
+//
+// Emit code for init methods of each class
+// Emitted code looks like:
+// ```
+//    Main_init:
+//        addiu    $sp $sp -12   ──┐
+//        sw       $fp 12($sp)     │
+//        sw       $s0 8($sp)      │ template
+//        sw       $ra 4($sp)      │ save current state
+//        addiu    $fp $sp 4       │
+//        move     $s0 $a0       ──┘
+//        jal      Object_init   <-- inherited from Object 
+//        la       $a0 A_protObj ──┐
+//        jal      Object.copy     │ initialize first attribute
+//        jal      A_init          │ whose type is A
+//        sw       $a0 12($s0)   ──┘ 
+//        move     $a0 $s0       ──┐
+//        lw       $fp 12($sp)     │
+//        lw       $s0 8($sp)      │ template
+//        lw       $ra 4($sp)      │ restore original state
+//        addiu    $sp $sp 12      │
+//        jr       $ra	         ──┘ 
+// ```
+//
+//********************************************************
 void CgenClassTable::code_class_init_methods() {
-
+    for (List<CgenNode> *l = nds; l; l = l->tl()) {
+        CgenNodeP node = l->hd();
+        Symbol class_name = node->get_name();
+        str << class_name << CLASSINIT_SUFFIX << LABEL; // <Class>_init:
+        // template: save current state
+        emit_addiu(SP, SP, -12, str);                   //     addiu    $sp $sp -12
+        emit_store(FP, 3, SP, str);                     //     sw       $fp 12($sp)
+        emit_store(SELF, 2, SP, str);                   //     sw       $s0 8($sp)
+        emit_store(RA, 1, SP, str);                     //     sw       $ra 4($sp)
+        emit_addiu(FP, SP, 4, str);                     //     addiu    $fp $sp 4
+        emit_move(SELF, ACC, str);                      //     move     $s0 $a0
+        // initialize inherited attributes
+        if (class_name != Object) {
+            Symbol parent_name = node->get_parentnd()->get_name();
+            //                                                 jal      <Parent>_init
+            str << JAL; emit_init_ref(parent_name, str); str << endl;
+        }
+        // initialize attributes owned by itself
+        std::vector<Symbol> attrs = node->get_attrs();
+        for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
+            if (node->owns_attr(*it)) {
+                node->get_attr_definition(*it)->get_init()->code(str);
+                //                                             sw       $a0 <offset>($s0)
+                emit_store(ACC, node->get_attr_offset(*it), SELF, str);
+            }
+        }   
+        // template: restore original state
+        emit_move(ACC, SELF, str);                      //     move     $a0 $s0
+        emit_load(FP, 3, SP, str);                      //     lw       $fp 12($sp)
+        emit_load(SELF, 2, SP, str);                    //     lw       $s0 8($sp)
+        emit_load(RA, 1, SP, str);                      //     lw       $ra 4($sp)
+        emit_addiu(SP, SP, 12, str);                    //     addiu    $sp $sp 12
+        emit_return(str);                               //     jr       $ra
+    };
 }
 
 void CgenClassTable::code_class_methods() {

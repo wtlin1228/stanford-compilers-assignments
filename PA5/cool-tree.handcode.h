@@ -86,11 +86,12 @@ bool is_attr() { return false; }    \
 Symbol get_name() { return name; } 
 
 
-#define attr_EXTRAS                 \
-bool is_method() { return false; }  \
-bool is_attr() { return true; }     \
-Symbol get_name() { return name; }  \
-Symbol get_type() { return type_decl; } 
+#define attr_EXTRAS                      \
+bool is_method() { return false; }       \
+bool is_attr() { return true; }          \
+Symbol get_name() { return name; }       \
+Symbol get_type() { return type_decl; }  \
+Expression get_init() { return init; }
 
 
 #define Formal_EXTRAS                              \
