@@ -811,6 +811,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream &s)
     install_basic_classes();
     install_classes(classes);
     build_inheritance_tree();
+    build_cgen_node_map();
 
     code();
     exitscope();
@@ -1133,8 +1134,6 @@ void CgenClassTable::code() {
 
     if (cgen_debug) cout << "coding constants" << endl;
     code_constants();
-
-    build_cgen_node_map();
 
     // 1. class_nameTab:
     if (cgen_debug) cout << "coding class name table" << endl;
