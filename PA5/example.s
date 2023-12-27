@@ -420,22 +420,22 @@ A.f:
 	sw	$ra 8($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0    // $so holds Main.a
-	lw	$s1 12($s0)    // $s1 = Int(42)
-	lw	$a0 16($s0)    // $a0 = Int(43)
+	lw	$s1 12($s0)    // $s1 = Int(42)       // load a1 from $s0
+	lw	$a0 16($s0)    // $a0 = Int(43)       // load a2 from $s0
 	jal	Object.copy    // $a0 = Copy(Int(43))
 	lw	$t2 12($a0)    // $t2 = 43
 	lw	$t1 12($s1)    // $t1 = 42
 	add	$t1 $t1 $t2    // $t1 = 85
 	sw	$t1 12($a0)    // $a0 = Int(85)
 	move	$s1 $a0    // $s1 = Int(85)
-	lw	$a0 20($fp)    // $a0 = Int(8)
+	lw	$a0 20($fp)    // $a0 = Int(8)        // load 8 from $fp
 	jal	Object.copy    // $a0 = Copy(Int(8))
 	lw	$t2 12($a0)    // $t2 = 8
 	lw	$t1 12($s1)    // $t1 = 85
 	add	$t1 $t1 $t2    // $t1 = 93
 	sw	$t1 12($a0)    // $a0 = Int(93)
 	move	$s1 $a0    // $s1 = Int(93)
-	lw	$a0 16($fp)    // $a0 = Int(7)
+	lw	$a0 16($fp)    // $a0 = Int(7)        // load 7 from $fp
 	jal	Object.copy    // $a0 = Copy(Int(7))
 	lw	$t2 12($a0)    // $t2 = 7
 	lw	$t1 12($s1)    // $t1 = 93

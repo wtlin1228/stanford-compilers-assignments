@@ -778,13 +778,27 @@ void CgenClassTable::code_class_init_methods() {
         }
         // initialize attributes owned by itself
         std::vector<Symbol> attrs = node->get_attrs();
+        CgenContextP ctx = new CgenContext();
+        // so = current class
+        // E = [attr0: loc0,       attr1: loc1      , ...]
+        // S = [loc0 -> (3, SELF), loc1 -> (4, SELF), ...]
+        ctx->set_self_object(class_name);
+        ctx->enterscope();
+        for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
+            int loc = ctx->newloc();
+            ctx->set_loc(*it, loc);
+            ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
+        }
         for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
             if (node->owns_attr(*it)) {
-                node->get_attr_definition(*it)->get_init()->code(str);
+                node->get_attr_definition(*it)->get_init()->code(str, ctx);
+                int loc = ctx->get_loc(*it);
+                MemoryAddress mem_addr = ctx->get_memory_address(loc);
                 //                                             sw       $a0 <offset>($s0)
-                emit_store(ACC, node->get_attr_offset(*it), SELF, str);
+                emit_store(ACC, mem_addr.first, mem_addr.second, str);
             }
         }   
+        ctx->exitscope();
         // template: restore original state
         emit_move(ACC, SELF, str);                      //     move     $a0 $s0
         emit_load(FP, 3, SP, str);                      //     lw       $fp 12($sp)
@@ -1190,59 +1204,59 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct)
 //
 //*****************************************************************
 
-void assign_class::code(ostream &s) {}
+void assign_class::code(ostream &s, CgenContextP ctx) {}
 
-void static_dispatch_class::code(ostream &s) {}
+void static_dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
-void dispatch_class::code(ostream &s) {}
+void dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
-void cond_class::code(ostream &s) {}
+void cond_class::code(ostream &s, CgenContextP ctx) {}
 
-void loop_class::code(ostream &s) {}
+void loop_class::code(ostream &s, CgenContextP ctx) {}
 
-void typcase_class::code(ostream &s) {}
+void typcase_class::code(ostream &s, CgenContextP ctx) {}
 
-void block_class::code(ostream &s) {}
+void block_class::code(ostream &s, CgenContextP ctx) {}
 
-void let_class::code(ostream &s) {}
+void let_class::code(ostream &s, CgenContextP ctx) {}
 
-void plus_class::code(ostream &s) {}
+void plus_class::code(ostream &s, CgenContextP ctx) {}
 
-void sub_class::code(ostream &s) {}
+void sub_class::code(ostream &s, CgenContextP ctx) {}
 
-void mul_class::code(ostream &s) {}
+void mul_class::code(ostream &s, CgenContextP ctx) {}
 
-void divide_class::code(ostream &s) {}
+void divide_class::code(ostream &s, CgenContextP ctx) {}
 
-void neg_class::code(ostream &s) {}
+void neg_class::code(ostream &s, CgenContextP ctx) {}
 
-void lt_class::code(ostream &s) {}
+void lt_class::code(ostream &s, CgenContextP ctx) {}
 
-void eq_class::code(ostream &s) {}
+void eq_class::code(ostream &s, CgenContextP ctx) {}
 
-void leq_class::code(ostream &s) {}
+void leq_class::code(ostream &s, CgenContextP ctx) {}
 
-void comp_class::code(ostream &s) {}
+void comp_class::code(ostream &s, CgenContextP ctx) {}
 
-void int_const_class::code(ostream &s) {
+void int_const_class::code(ostream &s, CgenContextP ctx) {
     //
     // Need to be sure we have an IntEntry *, not an arbitrary Symbol
     //
     emit_load_int(ACC, inttable.lookup_string(token->get_string()), s);
 }
 
-void string_const_class::code(ostream &s) {
+void string_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
 }
 
-void bool_const_class::code(ostream &s) {
+void bool_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_bool(ACC, BoolConst(val), s);
 }
 
-void new__class::code(ostream &s) {}
+void new__class::code(ostream &s, CgenContextP ctx) {}
 
-void isvoid_class::code(ostream &s) {}
+void isvoid_class::code(ostream &s, CgenContextP ctx) {}
 
-void no_expr_class::code(ostream &s) {}
+void no_expr_class::code(ostream &s, CgenContextP ctx) {}
 
-void object_class::code(ostream &s) {}
+void object_class::code(ostream &s, CgenContextP ctx) {}
