@@ -790,7 +790,7 @@ void CgenClassTable::code_class_init_methods() {
             ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
         }
         for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
-            if (node->owns_attr(*it)) {
+            if (node->owns_attr(*it) && node->get_attr_definition(*it)->get_init()->get_type() != NULL) {
                 node->get_attr_definition(*it)->get_init()->code(str, ctx);
                 int loc = ctx->get_loc(*it);
                 MemoryAddress mem_addr = ctx->get_memory_address(loc);
@@ -1259,4 +1259,8 @@ void isvoid_class::code(ostream &s, CgenContextP ctx) {}
 
 void no_expr_class::code(ostream &s, CgenContextP ctx) {}
 
-void object_class::code(ostream &s, CgenContextP ctx) {}
+void object_class::code(ostream &s, CgenContextP ctx) {
+    int loc = ctx->get_loc(name);
+    MemoryAddress mem_addr = ctx->get_memory_address(loc);
+    emit_load(ACC, mem_addr.first, mem_addr.second, s);    
+}
