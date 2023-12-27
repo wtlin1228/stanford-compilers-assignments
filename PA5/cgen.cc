@@ -790,7 +790,14 @@ void CgenClassTable::code_class_init_methods() {
             ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
         }
         for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
-            if (node->owns_attr(*it) && node->get_attr_definition(*it)->get_init()->get_type() != NULL) {
+            // init method only need to initialize its own attributes 
+            // which has init expression, for those without init expression
+            // they are initialized by the default value in prototype object
+            // which is already done in code_class_prototype_tables()
+            if (
+                node->owns_attr(*it) 
+                && node->get_attr_definition(*it)->get_init()->get_type() != NULL
+            ) {
                 node->get_attr_definition(*it)->get_init()->code(str, ctx);
                 int loc = ctx->get_loc(*it);
                 MemoryAddress mem_addr = ctx->get_memory_address(loc);
