@@ -1227,7 +1227,22 @@ void block_class::code(ostream &s, CgenContextP ctx) {}
 
 void let_class::code(ostream &s, CgenContextP ctx) {}
 
-void plus_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Plus Expression ::= e1 + e2
+// e1 and e2 are guaranteed to be Int (checked by semantic analyzer)
+//
+//********************************************************
+void plus_class::code(ostream &s, CgenContextP ctx) {
+    e1->code(s, ctx);
+    emit_move(S1, ACC, s);       // move    $s1 $a0
+    e2->code(s, ctx);
+    emit_jal("Object.copy", s);  // jal     Object.copy
+    emit_load(T2, 3, ACC, s);    // lw      $t2 12($a0)
+    emit_load(T1, 3, S1, s);     // lw      $t1 12($s1)
+    emit_add(T1, T1, T2, s);     // add     $t1 $t1 $t2
+    emit_store(T1, 3, ACC, s);   // sw      $t1 12($a0)
+}
 
 void sub_class::code(ostream &s, CgenContextP ctx) {}
 

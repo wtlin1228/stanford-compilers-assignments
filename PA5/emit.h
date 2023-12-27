@@ -68,6 +68,7 @@
 #define ACC  "$a0"		// Accumulator 
 #define A1   "$a1"		// For arguments to prim funcs 
 #define SELF "$s0"		// Ptr to self (callee saves) 
+#define S1   "$s1"		// Callee saves
 #define T1   "$t1"		// Temporary 1 
 #define T2   "$t2"		// Temporary 2 
 #define T3   "$t3"		// Temporary 3 
