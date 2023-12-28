@@ -1234,8 +1234,9 @@ void let_class::code(ostream &s, CgenContextP ctx) {}
 //
 //********************************************************
 void plus_class::code(ostream &s, CgenContextP ctx) {
-    e1->code(s, ctx);
-    emit_move(S1, ACC, s);       // move    $s1 $a0
+    e1->code(s, ctx);                                 
+    emit_push(ACC, s);           // sw     $a0 0($sp)
+                                 // addiu  $sp $sp -4
     e2->code(s, ctx);
     emit_jal("Object.copy", s);  // jal     Object.copy
     emit_load(T2, 3, ACC, s);    // lw      $t2 12($a0)
