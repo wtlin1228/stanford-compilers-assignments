@@ -1315,8 +1315,26 @@ void divide_class::code(ostream &s, CgenContextP ctx) {
     emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
 }
 
-void neg_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Neg Expression ::= ~e1
+// e1 is guaranteed to be Int (checked by semantic analyzer)
+// 
+//********************************************************
+void neg_class::code(ostream &s, CgenContextP ctx) {
+    e1->code(s, ctx);
+    emit_jal("Object.copy", s);  // jal     Object.copy
+    emit_fetch_int(T1, ACC, s);  // lw      $t1 12($a0)
+    emit_neg(T1, T1, s);         // neg     $t1 $t1
+    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+}
 
+//********************************************************
+//
+// Lt Expression ::= e1 < e2
+// e1 and e2 are guaranteed to be Int (checked by semantic analyzer)
+//
+//********************************************************
 void lt_class::code(ostream &s, CgenContextP ctx) {}
 
 void eq_class::code(ostream &s, CgenContextP ctx) {}
