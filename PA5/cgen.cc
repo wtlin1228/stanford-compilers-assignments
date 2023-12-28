@@ -297,6 +297,14 @@ static void emit_push(char *reg, ostream &str) {
 }
 
 //
+// Pop the stack into a register. The stack grows towards larger addresses.
+//
+static void emit_pop(char *reg, ostream &str) {
+    emit_load(reg, 1, SP, str);
+    emit_addiu(SP, SP, 4, str);
+}
+
+//
 // Fetch the integer value in an Int object.
 // Emits code to fetch the integer value of the Integer object pointed
 // to by register source into the register dest
@@ -1235,17 +1243,37 @@ void let_class::code(ostream &s, CgenContextP ctx) {}
 //********************************************************
 void plus_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
-    emit_push(ACC, s);           // sw     $a0 0($sp)
-                                 // addiu  $sp $sp -4
+    emit_push(ACC, s);           // sw      $a0 0($sp)
+                                 // addiu   $sp $sp -4
     e2->code(s, ctx);
     emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_load(T2, 3, ACC, s);    // lw      $t2 12($a0)
-    emit_load(T1, 3, S1, s);     // lw      $t1 12($s1)
+    emit_pop(T1, s);             // lw      $t1 4($sp)
+                                 // addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
     emit_add(T1, T1, T2, s);     // add     $t1 $t1 $t2
-    emit_store(T1, 3, ACC, s);   // sw      $t1 12($a0)
+    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
 }
 
-void sub_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Sub Expression ::= e1 - e2
+// e1 and e2 are guaranteed to be Int (checked by semantic analyzer)
+//
+//********************************************************
+void sub_class::code(ostream &s, CgenContextP ctx) {
+    e1->code(s, ctx);                                 
+    emit_push(ACC, s);           // sw      $a0 0($sp)
+                                 // addiu   $sp $sp -4
+    e2->code(s, ctx);
+    emit_jal("Object.copy", s);  // jal     Object.copy
+    emit_pop(T1, s);             // lw      $t1 4($sp)
+                                 // addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
+    emit_sub(T1, T1, T2, s);     // sub     $t1 $t1 $t2
+    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+}
 
 void mul_class::code(ostream &s, CgenContextP ctx) {}
 
