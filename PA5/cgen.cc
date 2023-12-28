@@ -1219,13 +1219,37 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct)
 //
 //*****************************************************************
 
+int next_label_idx = 0;
+int get_next_label_idx() {
+    return next_label_idx++;
+}
+
 void assign_class::code(ostream &s, CgenContextP ctx) {}
 
 void static_dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
 void dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
-void cond_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Expression ::= if pred then then_exp else else_exp fi
+// pred expression is guaranteed to be Bool (checked by semantic analyzer)
+//
+//********************************************************
+void cond_class::code(ostream &s, CgenContextP ctx) {
+    int false_label_idx = get_next_label_idx();
+    int done_label_idx = get_next_label_idx();
+    pred->code(s, ctx);
+    emit_load_bool(T1, ACC, s);
+    emit_beq(T1, ZERO, false_label_idx, s); //     beq    $t1 $zero label<false_label_idx>
+    // true branch
+    then_exp->code(s, ctx);
+    emit_branch(done_label_idx, s);         //     b      label<done_label_idx>
+    // false branch
+    emit_label_def(false_label_idx, s);     // label<false_label_idx>:
+    else_exp->code(s, ctx);
+    emit_label_def(done_label_idx, s);      // label<done_label_idx>:
+}
 
 void loop_class::code(ostream &s, CgenContextP ctx) {}
 
