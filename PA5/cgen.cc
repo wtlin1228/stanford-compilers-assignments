@@ -1359,11 +1359,48 @@ void neg_class::code(ostream &s, CgenContextP ctx) {
 // e1 and e2 are guaranteed to be Int (checked by semantic analyzer)
 //
 //********************************************************
-void lt_class::code(ostream &s, CgenContextP ctx) {}
+void lt_class::code(ostream &s, CgenContextP ctx) {
+    int done_label_idx = get_next_label_idx();
+    e1->code(s, ctx);                                 
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
+    e2->code(s, ctx); 
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
+    emit_blt(T1, T2, done_label_idx, s);  //     blt     $t1 $t2 label<true_label_idx>
+    emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
+    emit_label_def(done_label_idx, s);    // label<done_label_idx>:
+}
 
-void eq_class::code(ostream &s, CgenContextP ctx) {}
 
-void leq_class::code(ostream &s, CgenContextP ctx) {}
+void eq_class::code(ostream &s, CgenContextP ctx) {
+
+}
+
+//********************************************************
+//
+// Leq Expression ::= e1 <= e2
+// e1 and e2 are guaranteed to be Int (checked by semantic analyzer)
+//
+//********************************************************
+void leq_class::code(ostream &s, CgenContextP ctx) {
+    int done_label_idx = get_next_label_idx();
+    e1->code(s, ctx);                                 
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
+    e2->code(s, ctx); 
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
+    emit_bleq(T1, T2, done_label_idx, s); //     bleq    $t1 $t2 label<true_label_idx>
+    emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
+    emit_label_def(done_label_idx, s);    // label<done_label_idx>:
+}
 
 void comp_class::code(ostream &s, CgenContextP ctx) {}
 
