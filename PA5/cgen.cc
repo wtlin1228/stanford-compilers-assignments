@@ -1247,7 +1247,18 @@ int get_next_label_idx() {
     return next_label_idx++;
 }
 
-void assign_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Expression ::= name <- expr
+//
+//********************************************************
+void assign_class::code(ostream &s, CgenContextP ctx) {
+    expr->code(s, ctx);
+    int loc = ctx->get_loc(name);
+    MemoryAddress mem_addr = ctx->get_memory_address(loc);
+    emit_store(ACC, mem_addr.first, mem_addr.second, s);
+    emit_move(ACC, SELF, s);
+}
 
 void static_dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
