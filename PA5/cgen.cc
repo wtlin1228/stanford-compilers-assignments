@@ -1279,11 +1279,11 @@ void cond_class::code(ostream &s, CgenContextP ctx) {
     int false_label_idx = get_next_label_idx();
     int done_label_idx = get_next_label_idx();
     pred->code(s, ctx);
-    emit_load_bool(T1, ACC, s);
-    emit_beqz(T1, false_label_idx, s);      //     beq    $t1 $zero label<false_label_idx>
+    emit_fetch_int(T1, ACC, s);             //     lw      $t1 12($a0)
+    emit_beqz(T1, false_label_idx, s);      //     beq     $t1 $zero label<false_label_idx>
     // true branch
     then_exp->code(s, ctx);
-    emit_branch(done_label_idx, s);         //     b      label<done_label_idx>
+    emit_branch(done_label_idx, s);         //     b       label<done_label_idx>
     // false branch
     emit_label_def(false_label_idx, s);     // label<false_label_idx>:
     else_exp->code(s, ctx);
