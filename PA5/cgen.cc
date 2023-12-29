@@ -27,6 +27,7 @@
 #include <queue>
 #include <map>
 #include <vector>
+#include <string.h>
 
 extern void emit_string_constant(ostream &str, char *s);
 extern int cgen_debug;
@@ -168,18 +169,6 @@ static void emit_load_string(char *dest, StringEntry *str, ostream &s) {
 static void emit_load_int(char *dest, IntEntry *i, ostream &s) {
     emit_partial_load_address(dest, s);
     i->code_ref(s);
-    s << endl;
-}
-
-static void emit_load_prot(char *dest, Symbol sym, ostream &s) {
-    emit_partial_load_address(dest, s);
-    emit_protobj_ref(sym, s);
-    s << endl;
-}
-
-static void emit_jal_init(Symbol sym, ostream &s) {
-    s << JAL;
-    emit_init_ref(sym, s);
     s << endl;
 }
 
@@ -356,6 +345,18 @@ static void emit_equality_test_for_t1_and_t2(ostream &s) {
     emit_load_bool(ACC, truebool, s);  // lw      $a0 true
     emit_load_bool(A1, falsebool, s);  // lw      $a1 false
     emit_jal("equality_test", s);      // jal     equality_test
+}
+
+static void emit_load_prot(char *dest, Symbol sym, ostream &s) {
+    emit_partial_load_address(dest, s);
+    emit_protobj_ref(sym, s);
+    s << endl;
+}
+
+static void emit_jal_init(Symbol sym, ostream &s) {
+    s << JAL;
+    emit_init_ref(sym, s);
+    s << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1256,7 +1257,7 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
     expr->code(s, ctx);
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
-    if (mem_addr.second == SP) {
+    if (strcmp(mem_addr.second, SP) == 0) {
         emit_store(ACC, ctx->get_variable_offset(mem_addr.first), mem_addr.second, s);
     } else {
         emit_store(ACC, mem_addr.first, mem_addr.second, s);
@@ -1594,7 +1595,7 @@ void no_expr_class::code(ostream &s, CgenContextP ctx) {
 void object_class::code(ostream &s, CgenContextP ctx) {
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
-    if (mem_addr.second == SP) {
+    if (strcmp(mem_addr.second, SP) == 0) {
         emit_load(ACC, ctx->get_variable_offset(mem_addr.first), mem_addr.second, s);
     } else {
         emit_load(ACC, mem_addr.first, mem_addr.second, s);    
