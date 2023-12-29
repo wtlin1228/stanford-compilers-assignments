@@ -1470,7 +1470,20 @@ void bool_const_class::code(ostream &s, CgenContextP ctx) {
 
 void new__class::code(ostream &s, CgenContextP ctx) {}
 
-void isvoid_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Isvoid Expression ::= isvoid e1
+//
+//********************************************************
+void isvoid_class::code(ostream &s, CgenContextP ctx) {
+    e1->code(s, ctx);
+    emit_move(T1, ACC, s);                //     move    $t1 $a0
+    int done_label_idx = get_next_label_idx();
+    emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
+    emit_beqz(T1, done_label_idx, s);     //     beqz    $t1 label<done_label_idx>
+    emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
+    emit_label_def(done_label_idx, s);    // label<done_label_idx>:
+}
 
 void no_expr_class::code(ostream &s, CgenContextP ctx) {}
 
