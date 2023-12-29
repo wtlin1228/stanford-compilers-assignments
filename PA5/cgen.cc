@@ -1278,16 +1278,16 @@ void let_class::code(ostream &s, CgenContextP ctx) {}
 //********************************************************
 void plus_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
-    emit_push(ACC, s);           // sw      $a0 0($sp)
-                                 // addiu   $sp $sp -4
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
     e2->code(s, ctx);
-    emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_pop(T1, s);             // lw      $t1 4($sp)
-                                 // addiu   $sp $sp 4
-    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
-    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
-    emit_add(T1, T1, T2, s);     // add     $t1 $t1 $t2
-    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_add(T1, T1, T2, s);              //     add     $t1 $t1 $t2
+    emit_store_int(T1, ACC, s);           //     sw      $t1 12($a0)
 }
 
 //********************************************************
@@ -1298,16 +1298,16 @@ void plus_class::code(ostream &s, CgenContextP ctx) {
 //********************************************************
 void sub_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
-    emit_push(ACC, s);           // sw      $a0 0($sp)
-                                 // addiu   $sp $sp -4
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
     e2->code(s, ctx);
-    emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_pop(T1, s);             // lw      $t1 4($sp)
-                                 // addiu   $sp $sp 4
-    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
-    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
-    emit_sub(T1, T1, T2, s);     // sub     $t1 $t1 $t2
-    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_sub(T1, T1, T2, s);              //     sub     $t1 $t1 $t2
+    emit_store_int(T1, ACC, s);           //     sw      $t1 12($a0)
 }
 
 //********************************************************
@@ -1318,16 +1318,16 @@ void sub_class::code(ostream &s, CgenContextP ctx) {
 //********************************************************
 void mul_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
-    emit_push(ACC, s);           // sw      $a0 0($sp)
-                                 // addiu   $sp $sp -4
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
     e2->code(s, ctx);
-    emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_pop(T1, s);             // lw      $t1 4($sp)
-                                 // addiu   $sp $sp 4
-    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
-    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
-    emit_mul(T1, T1, T2, s);     // mul     $t1 $t1 $t2
-    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_mul(T1, T1, T2, s);              //     mul     $t1 $t1 $t2
+    emit_store_int(T1, ACC, s);           //     sw      $t1 12($a0)
 }
 
 //********************************************************
@@ -1338,16 +1338,16 @@ void mul_class::code(ostream &s, CgenContextP ctx) {
 //********************************************************
 void divide_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
-    emit_push(ACC, s);           // sw      $a0 0($sp)
-                                 // addiu   $sp $sp -4
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
     e2->code(s, ctx);
-    emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_pop(T1, s);             // lw      $t1 4($sp)
-                                 // addiu   $sp $sp 4
-    emit_fetch_int(T1, T1, s);   // lw      $t1 12($t1)
-    emit_fetch_int(T2, ACC, s);  // lw      $t2 12($a0)
-    emit_div(T1, T1, T2, s);     // div     $t1 $t1 $t2
-    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
+    emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    emit_div(T1, T1, T2, s);              //     div     $t1 $t1 $t2
+    emit_store_int(T1, ACC, s);           //     sw      $t1 12($a0)
 }
 
 //********************************************************
@@ -1358,10 +1358,10 @@ void divide_class::code(ostream &s, CgenContextP ctx) {
 //********************************************************
 void neg_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);
-    emit_jal("Object.copy", s);  // jal     Object.copy
-    emit_fetch_int(T1, ACC, s);  // lw      $t1 12($a0)
-    emit_neg(T1, T1, s);         // neg     $t1 $t1
-    emit_store_int(T1, ACC, s);  // sw      $t1 12($a0)
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_fetch_int(T1, ACC, s);           //     lw      $t1 12($a0)
+    emit_neg(T1, T1, s);                  //     neg     $t1 $t1
+    emit_store_int(T1, ACC, s);           //     sw      $t1 12($a0)
 }
 
 //********************************************************
