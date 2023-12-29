@@ -1252,7 +1252,7 @@ void cond_class::code(ostream &s, CgenContextP ctx) {
     int done_label_idx = get_next_label_idx();
     pred->code(s, ctx);
     emit_load_bool(T1, ACC, s);
-    emit_beq(T1, ZERO, false_label_idx, s); //     beq    $t1 $zero label<false_label_idx>
+    emit_beqz(T1, false_label_idx, s);      //     beq    $t1 $zero label<false_label_idx>
     // true branch
     then_exp->code(s, ctx);
     emit_branch(done_label_idx, s);         //     b      label<done_label_idx>
@@ -1437,7 +1437,21 @@ void leq_class::code(ostream &s, CgenContextP ctx) {
     emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
 
-void comp_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Comp Expression ::= not e1
+// e1 is guaranteed to be Bool (checked by semantic analyzer)
+//
+//********************************************************
+void comp_class::code(ostream &s, CgenContextP ctx) {
+    e1->code(s, ctx);
+    emit_fetch_int(T1, ACC, s);           //     lw      $t1 12($a0)
+    int done_label_idx = get_next_label_idx();
+    emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
+    emit_beqz(T1, done_label_idx, s);     //     beqz    $t1 label<done_label_idx>
+    emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
+    emit_label_def(done_label_idx, s);    // label<done_label_idx>:
+}
 
 void int_const_class::code(ostream &s, CgenContextP ctx) {
     //
