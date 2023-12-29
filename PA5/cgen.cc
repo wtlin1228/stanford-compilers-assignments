@@ -1266,7 +1266,16 @@ void loop_class::code(ostream &s, CgenContextP ctx) {}
 
 void typcase_class::code(ostream &s, CgenContextP ctx) {}
 
-void block_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Block Expression ::= { e1; e2; ...; en; }
+//
+//********************************************************
+void block_class::code(ostream &s, CgenContextP ctx) {
+    for (int i = body->first(); body->more(i); i = body->next(i)) {
+        body->nth(i)->code(s, ctx);
+    }
+}
 
 void let_class::code(ostream &s, CgenContextP ctx) {}
 
