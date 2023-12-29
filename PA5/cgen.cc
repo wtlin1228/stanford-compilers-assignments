@@ -1485,7 +1485,14 @@ void isvoid_class::code(ostream &s, CgenContextP ctx) {
     emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
 
-void no_expr_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// No_expr Expression ::= /* empty */
+//
+//********************************************************
+void no_expr_class::code(ostream &s, CgenContextP ctx) {
+    emit_move(ACC, ZERO, s);              //     move    $a0 $zero
+}
 
 void object_class::code(ostream &s, CgenContextP ctx) {
     int loc = ctx->get_loc(name);
