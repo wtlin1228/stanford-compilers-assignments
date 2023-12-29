@@ -1257,7 +1257,7 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
     emit_store(ACC, mem_addr.first, mem_addr.second, s);
-    emit_move(ACC, SELF, s);
+    emit_move(ACC, SELF, s);                //     move    $a0 $s0
 }
 
 void static_dispatch_class::code(ostream &s, CgenContextP ctx) {}
