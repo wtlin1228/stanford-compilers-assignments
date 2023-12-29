@@ -171,6 +171,18 @@ static void emit_load_int(char *dest, IntEntry *i, ostream &s) {
     s << endl;
 }
 
+static void emit_load_prot(char *dest, Symbol sym, ostream &s) {
+    emit_partial_load_address(dest, s);
+    emit_protobj_ref(sym, s);
+    s << endl;
+}
+
+static void emit_jal_init(Symbol sym, ostream &s) {
+    s << JAL;
+    emit_init_ref(sym, s);
+    s << endl;
+}
+
 static void emit_move(char *dest_reg, char *source_reg, ostream &s) {
     s << MOVE << dest_reg << " " << source_reg << endl;
 }
@@ -1494,7 +1506,19 @@ void bool_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_bool(ACC, BoolConst(val), s);
 }
 
-void new__class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// New Expression ::= new type_name
+// type_name is guaranteed to be a valid type (checked by semantic analyzer)
+// Note that type_name can be SELF_TYPE.
+//
+//********************************************************
+void new__class::code(ostream &s, CgenContextP ctx) {
+    Symbol class_name = type_name == SELF_TYPE ? ctx->get_self_object() : type_name;
+    emit_load_prot(ACC, class_name, s);   //     la      $a0 <Class>_protObj
+    emit_jal("Object.copy", s);           //     jal     Object.copy
+    emit_jal_init(class_name, s);         //     jal     <Class>_init
+}
 
 //********************************************************
 //
