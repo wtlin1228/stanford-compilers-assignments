@@ -335,6 +335,17 @@ static void emit_gc_check(char *source, ostream &s) {
     s << JAL << "_gc_check" << endl;
 }
 
+//
+// Tests whether the objects passed in $t1 and $t2 have the same
+// primitive type {Int,String,Bool} and the same value. If they do,
+// the value in $a0 is returned, otherwise $a1 is returned.
+//
+static void emit_equality_test_for_t1_and_t2(ostream &s) {
+    emit_load_bool(ACC, truebool, s);  // lw      $a0 true
+    emit_load_bool(A1, falsebool, s);  // lw      $a1 false
+    emit_jal("equality_test", s);      // jal     equality_test
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // coding strings, ints, and booleans
@@ -1360,7 +1371,6 @@ void neg_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void lt_class::code(ostream &s, CgenContextP ctx) {
-    int done_label_idx = get_next_label_idx();
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
@@ -1369,15 +1379,40 @@ void lt_class::code(ostream &s, CgenContextP ctx) {
                                           //     addiu   $sp $sp 4
     emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
     emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    int done_label_idx = get_next_label_idx();
     emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
-    emit_blt(T1, T2, done_label_idx, s);  //     blt     $t1 $t2 label<true_label_idx>
+    emit_blt(T1, T2, done_label_idx, s);  //     blt     $t1 $t2 label<done_label_idx>
     emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
     emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
 
-
+//********************************************************
+//
+// Eq Expression ::= e1 = e2
+// If one of the e1 and e2 is Int, String or Bool, then
+// both e1 and e2 are guaranteed to be the same type.
+// Otherwise, e1 and e2 are equal if and only if they are
+// the same type and the same object.
+//
+//********************************************************
 void eq_class::code(ostream &s, CgenContextP ctx) {
-
+    e1->code(s, ctx);
+    emit_push(ACC, s);                    //     sw      $a0 0($sp)
+                                          //     addiu   $sp $sp -4
+    e2->code(s, ctx);
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_move(T2, ACC, s);                //     move    $t2 $a0
+    Symbol e1_type = e1->get_type();
+    if (e1_type == Int || e1_type == Str || e1_type == Bool) {
+        emit_equality_test_for_t1_and_t2(s);
+        return;
+    }
+    int done_label_idx = get_next_label_idx();
+    emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
+    emit_beq(T1, T2, done_label_idx, s);  //     beq     $t1 $t2 label<done_label_idx>
+    emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
+    emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
 
 //********************************************************
@@ -1387,7 +1422,6 @@ void eq_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void leq_class::code(ostream &s, CgenContextP ctx) {
-    int done_label_idx = get_next_label_idx();
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
@@ -1396,8 +1430,9 @@ void leq_class::code(ostream &s, CgenContextP ctx) {
                                           //     addiu   $sp $sp 4
     emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
     emit_fetch_int(T2, ACC, s);           //     lw      $t2 12($a0)
+    int done_label_idx = get_next_label_idx();
     emit_load_bool(ACC, truebool, s);     //     lw      $a0 true
-    emit_bleq(T1, T2, done_label_idx, s); //     bleq    $t1 $t2 label<true_label_idx>
+    emit_bleq(T1, T2, done_label_idx, s); //     bleq    $t1 $t2 label<done_label_idx>
     emit_load_bool(ACC, falsebool, s);    //     lw      $a0 false
     emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
