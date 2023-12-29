@@ -1262,7 +1262,24 @@ void cond_class::code(ostream &s, CgenContextP ctx) {
     emit_label_def(done_label_idx, s);      // label<done_label_idx>:
 }
 
-void loop_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Expression ::= while pred loop body pool
+// pred expression is guaranteed to be Bool (checked by semantic analyzer)
+//
+//********************************************************
+void loop_class::code(ostream &s, CgenContextP ctx) {
+    int begin_label_idx = get_next_label_idx();
+    int end_label_idx = get_next_label_idx();
+    emit_label_def(begin_label_idx, s);     // label<begin_label_idx>:
+    pred->code(s, ctx);
+    emit_fetch_int(T1, ACC, s);             //     lw      $t1 12($a0)
+    emit_beqz(T1, end_label_idx, s);        //     beqz    $t1 label<end_label_idx>
+    body->code(s, ctx);
+    emit_branch(begin_label_idx, s);        //     b       label<begin_label_idx>
+    emit_label_def(end_label_idx, s);       // label<end_label_idx>:
+    emit_move(ACC, ZERO, s);                //     move    $a0 $zero
+}
 
 void typcase_class::code(ostream &s, CgenContextP ctx) {}
 
