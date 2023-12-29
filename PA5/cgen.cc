@@ -1256,7 +1256,11 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
     expr->code(s, ctx);
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
-    emit_store(ACC, mem_addr.first, mem_addr.second, s);
+    if (mem_addr.second == SP) {
+        emit_store(ACC, ctx->get_variable_offset(mem_addr.first), mem_addr.second, s);
+    } else {
+        emit_store(ACC, mem_addr.first, mem_addr.second, s);
+    }
     emit_move(ACC, SELF, s);                //     move    $a0 $s0
 }
 
@@ -1317,7 +1321,39 @@ void block_class::code(ostream &s, CgenContextP ctx) {
     }
 }
 
-void let_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Let Expression ::= let identifier : type_decl <- init in body
+//
+//********************************************************
+void let_class::code(ostream &s, CgenContextP ctx) {
+    if (init->get_type() == NULL) {
+        // no init expression
+        if (type_decl == Int) {
+            emit_load_int(ACC, inttable.lookup_string("0"), s);
+        } else if (type_decl == Str) {
+            emit_load_string(ACC, stringtable.lookup_string(""), s);
+        } else if (type_decl == Bool) {
+            emit_load_bool(ACC, falsebool, s);
+        } else {
+            emit_move(ACC, ZERO, s);
+        }
+    } else {
+        init->code(s, ctx);
+    }
+    emit_push(ACC, s);                      //     sw      $a0 0($sp)
+                                            //     addiu   $sp $sp -4
+    // each let class has its own scope
+    ctx->enterscope();
+    int loc = ctx->newloc();
+    ctx->set_loc(identifier, loc);
+    ctx->set_memory_address(loc, std::pair<int, char*>(ctx->get_variable_count(), SP));
+    ctx->increment_variable_count();
+    body->code(s, ctx);
+    ctx->decrement_variable_count();
+    ctx->exitscope();
+    emit_addiu(SP, SP, 4, s);               //     addiu   $sp $sp 4
+}
 
 //********************************************************
 //
@@ -1558,5 +1594,9 @@ void no_expr_class::code(ostream &s, CgenContextP ctx) {
 void object_class::code(ostream &s, CgenContextP ctx) {
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
-    emit_load(ACC, mem_addr.first, mem_addr.second, s);    
+    if (mem_addr.second == SP) {
+        emit_load(ACC, ctx->get_variable_offset(mem_addr.first), mem_addr.second, s);
+    } else {
+        emit_load(ACC, mem_addr.first, mem_addr.second, s);    
+    }
 }

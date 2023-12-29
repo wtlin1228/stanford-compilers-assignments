@@ -38,9 +38,10 @@ private:
     SymbolTable<Symbol, int> E;
     std::map<int, MemoryAddress> S;
     int next_loc;
+    int variable_count;
 
 public:
-    CgenContext() : next_loc(0) { }
+    CgenContext() : next_loc(0), variable_count(0) {}
     int newloc() { return next_loc++; }
 
     void enterscope() { E.enterscope(); }
@@ -54,4 +55,21 @@ public:
 
     void          set_memory_address(int loc, MemoryAddress m) { S[loc] = m; }
     MemoryAddress get_memory_address(int loc) { return S[loc]; }
+
+    // Variable count is needed since we need to calculate the offset of
+    // a variable from the stack pointer. We can't use a fixed offset like
+    // attributes and arguments since the number of variables can change.
+    // If we have 3 variables, v1, v2, and v3,
+    //    MemoryAddress of v1 is (0, SP)
+    //    MemoryAddress of v2 is (1, SP)
+    //    MemoryAddress of v3 is (2, SP)
+    // We can calculate the offset of v1, v2, and v3 from the stack pointer
+    //    Offset of v1 is 3 - 0 = 3
+    //    Offset of v2 is 3 - 1 = 2
+    //    Offset of v3 is 3 - 2 = 1
+    // So the we know v1 is at (3, SP), v2 is at (2, SP), and v3 is at (1, SP)
+    void increment_variable_count() { variable_count++; }
+    void decrement_variable_count() { variable_count--; }
+    int  get_variable_count() { return variable_count; }
+    int  get_variable_offset(int variable_index) { return variable_count - variable_index; }
 };
