@@ -13,7 +13,7 @@ Design and build a compiler for Cool. Each assignment will cover one component o
 
 Grading: 63/63
 
-[cool.flex](PA2/cool.flex)
+- [cool.flex](PA2/cool.flex)
 
 ### Resource
 
@@ -23,7 +23,7 @@ Grading: 63/63
 
 Grading: 70/70
 
-[cool.y](PA3/cool.y)
+- [cool.y](PA3/cool.y)
 
 ### Resource
 
@@ -34,15 +34,23 @@ Grading: 70/70
 
 Grading: 74/74
 
-[cool-tree.h](PA4/cool-tree.h)
-[semant.cc](PA4/semant.cc)
-[semant.h](PA4/semant.h)
+- [cool-tree.h](PA4/cool-tree.h)
+- [semant.cc](PA4/semant.cc)
+- [semant.h](PA4/semant.h)
 
 ### Resource
 
 - [The Cool Reference Manual, Chapter 12, Type Rules](https://theory.stanford.edu/~aiken/software/cool/cool-manual.pdf)
 
 ## PA5 - Code Generator
+
+Grading: 3/63
+
+- [cgen-context.h](PA5/cgen-context.h)
+- [cgen.cc](PA5/cgen.cc)
+- [cgen.h](PA5/cgen.h)
+- [cool-tree.handcode.h](PA5/cool-tree.handcode.h)
+- [emit.h](PA5/emit.h)
 
 ### Resource
 
