@@ -32,6 +32,8 @@
 extern void emit_string_constant(ostream &str, char *s);
 extern int cgen_debug;
 
+CgenClassTable *codegen_classtable = NULL;
+
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
 // If e : No_type, then no code is generated for e.
@@ -111,7 +113,7 @@ void program_class::cgen(ostream &os) {
     os << "# start of generated code\n";
 
     initialize_constants();
-    CgenClassTable *codegen_classtable = new CgenClassTable(classes, os);
+    codegen_classtable = new CgenClassTable(classes, os);
 
     os << "\n# end of generated code\n";
 }
@@ -1309,7 +1311,102 @@ void loop_class::code(ostream &s, CgenContextP ctx) {
     emit_move(ACC, ZERO, s);                //     move    $a0 $zero
 }
 
-void typcase_class::code(ostream &s, CgenContextP ctx) {}
+//********************************************************
+//
+// Typecase Expression ::= case expr of [[ID : TYPE => expr;]]+ esac
+// branch types are guaranteed to be different (checked by semantic analyzer)
+//
+//********************************************************
+void typcase_class::code(ostream &s, CgenContextP ctx) {
+    int done_label_idx = get_next_label_idx();
+    expr->code(s, ctx);
+    int skip_abort2_label_idx = get_next_label_idx();
+    emit_bne(ACC, ZERO, skip_abort2_label_idx, s);
+    // _case_abort2:
+    // Called when a case is attempted on a void object. Prints the line
+    // number, from $t1, and filename, from $a0, at which the dispatch
+    // occurred, and aborts.
+    emit_load_imm(T1, get_line_number(), s); //     li      $t1 <line_number>
+    emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
+    emit_jal("_case_abort2", s);             //     jal     _case_abort2
+    emit_branch(done_label_idx, s);          //     b       label<done_label_idx>
+    emit_label_def(skip_abort2_label_idx, s); // label<skip_abort_label_idx>:
+    // build inheritance chain map for type C so we can iterate through
+    // the branches and find the least type <typek> such that C <= <typek>
+    // {
+    //     current class -> 0
+    //     parent class -> 1
+    //     ...
+    //     Object -> n
+    // }
+    std::map<Symbol, int> inheritance_chain;
+    CgenNodeP node = codegen_classtable->get_cgen_node(expr->get_type());
+    while (node->name != Object) {
+        inheritance_chain[node->name] = inheritance_chain.size();
+        node = node->get_parentnd();
+    }
+    inheritance_chain[Object] = inheritance_chain.size();
+    // build branch label map so we know which branch to jump to
+    // {
+    //     <type0> -> i
+    //     <type1> -> i + 1
+    //     ...
+    //     <typen> -> i + n
+    // }
+    std::map<Symbol, int> branch_label_map;
+    for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+        branch_class* branch = static_cast<branch_class*>(cases->nth(i));
+        branch_label_map[branch->type_decl] = get_next_label_idx();
+    }
+    // decide which branch to jump to
+    Symbol should_jump_to_branch = NULL;
+    for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+        branch_class* branch = static_cast<branch_class*>(cases->nth(i));
+        Symbol branch_type = branch->type_decl;
+        if (inheritance_chain.count(branch_type) == 0) {
+            // branch type is not in the inheritance chain
+            // we can skip this branch
+            continue;
+        }
+        if (should_jump_to_branch == NULL) {
+            // first match branch
+            should_jump_to_branch = branch_type;
+        } else {
+            // find the least type <typek> such that C <= <typek>
+            if (inheritance_chain[branch_type] < inheritance_chain[should_jump_to_branch]) {
+                should_jump_to_branch = branch_type;
+            }
+        }
+    }
+    if (should_jump_to_branch != NULL) {
+        // jump to the branch
+        emit_branch(branch_label_map[should_jump_to_branch], s); 
+    }
+    // _case_abort:
+    // Should be called when a case statement has no match.
+    // The class name of the object in $a0 is printed, and execution halts.
+    emit_jal("_case_abort", s);              //     jal     _case_abort
+    emit_branch(done_label_idx, s);          //     b       label<done_label_idx>
+    // code the branches
+    for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+        branch_class* branch = static_cast<branch_class*>(cases->nth(i));
+        int branch_label_idx = branch_label_map[branch->type_decl];
+        emit_label_def(branch_label_idx, s); // label<branch_label_idx>:
+        emit_push(ACC, s);                   //     sw      $a0 0($sp)
+                                             //     addiu   $sp $sp -4
+        ctx->enterscope();
+        int loc = ctx->newloc();
+        ctx->set_loc(branch->name, loc);
+        ctx->set_memory_address(loc, std::pair<int, char*>(ctx->get_variable_count(), SP));
+        ctx->increment_variable_count();
+        branch->expr->code(s, ctx);
+        ctx->decrement_variable_count();
+        ctx->exitscope();
+        emit_addiu(SP, SP, 4, s);            //     addiu   $sp $sp 4
+        emit_branch(done_label_idx, s);      //     b       label<done_label_idx>
+    }
+    emit_label_def(done_label_idx, s);       // label<done_label_idx>:
+}
 
 //********************************************************
 //
