@@ -1273,7 +1273,6 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
-    int done_label_idx = get_next_label_idx();
     // caller side saves the actual parameters in reverse order
     // those values will be popped by the callee, so we don't
     // need to pop them here.
@@ -1289,7 +1288,6 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     emit_load_imm(T1, get_line_number(), s); //     li      $t1 <line_number>
     emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
     emit_jal("_dispatch_abort", s);          //     jal     _dispatch_abort
-    emit_branch(done_label_idx, s);          //     b       label<done_label_idx>
     emit_label_def(skip_abort_label_idx, s); // label<skip_abort_label_idx>:
     //                                              jal     <type_name>.<name>
     s << JAL; emit_method_ref(type_name, name, s); s << endl;
@@ -1300,7 +1298,30 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
 // Dispatch Expression ::= [expr.]name(expr, ..., expr)
 //
 //********************************************************
-void dispatch_class::code(ostream &s, CgenContextP ctx) {}
+void dispatch_class::code(ostream &s, CgenContextP ctx) {
+    // caller side saves the actual parameters in reverse order
+    // those values will be popped by the callee, so we don't
+    // need to pop them here.
+    for (int i = actual->len() - 1; i >= 0; --i) {
+        actual->nth(i)->code(s, ctx);
+        emit_push(ACC, s);                  //     sw      $a0 0($sp)
+                                            //     addiu   $sp $sp -4
+    }
+    // check if expr is void
+    expr->code(s, ctx);
+    int skip_abort_label_idx = get_next_label_idx();
+    emit_bne(ACC, ZERO, skip_abort_label_idx, s);
+    emit_load_imm(T1, get_line_number(), s); //     li      $t1 <line_number>
+    emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
+    emit_jal("_dispatch_abort", s);          //     jal     _dispatch_abort
+    emit_label_def(skip_abort_label_idx, s); // label<skip_abort_label_idx>:
+    //                                              jal     <expr>.<name>
+    if (expr->get_type() == SELF_TYPE) {
+        s << JALR; emit_method_ref(ctx->get_self_object(), name, s); s << endl;
+    } else {
+        s << JAL; emit_method_ref(expr->get_type(), name, s); s << endl;
+    }
+}
 
 //********************************************************
 //
