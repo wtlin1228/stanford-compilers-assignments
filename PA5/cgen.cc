@@ -1325,7 +1325,6 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
     } else {
         emit_store(ACC, mem_addr.first, mem_addr.second, s);
     }
-    emit_move(ACC, SELF, s);                //     move    $a0 $s0
 }
 
 //********************************************************
