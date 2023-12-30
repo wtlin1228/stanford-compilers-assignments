@@ -1350,8 +1350,15 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
     emit_jal("_dispatch_abort", s);          //     jal     _dispatch_abort
     emit_label_def(skip_abort_label_idx, s); // label<skip_abort_label_idx>:
-    //                                              jal     <type_name>.<name>
-    s << JAL; emit_method_ref(type_name, name, s); s << endl;
+    // load dispatch table
+    Symbol dispatch_target = type_name;
+    //                                              la      $t1 <type_name>_dispTab
+    s << LA << T1 << " " << dispatch_target << DISPTAB_SUFFIX << endl;
+    // find method offset
+    int method_idx = codegen_classtable->get_cgen_node(dispatch_target)->get_method_index(name);
+    if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
+    emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
+    emit_jalr(T1, s);                        //     jalr    $t1
 }
 
 //********************************************************
