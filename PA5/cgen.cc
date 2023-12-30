@@ -851,7 +851,66 @@ void CgenClassTable::code_class_init_methods() {
 }
 
 void CgenClassTable::code_class_methods() {
-
+    for (List<CgenNode> *l = nds; l; l = l->tl()) {
+        CgenNodeP node = l->hd();
+        if (node->get_is_primitive_type()) {
+            continue;
+        }
+        Symbol class_name = node->get_name();
+        std::vector<Symbol> method_order_vec = node->get_methods();
+        for (size_t i = 0; i < method_order_vec.size(); ++i) {
+            Symbol method_name = method_order_vec[i];
+            if (node->get_method_owned_by(method_name) != class_name) {
+                continue;
+            }
+            method_class* method_definition = node->get_method_definition(method_name);
+            //                                             <Class>.<Method>:
+            str << class_name << METHOD_SEP << method_name << LABEL; 
+            // template: save current state
+            emit_addiu(SP, SP, -12, str);               //     addiu    $sp $sp -12
+            emit_store(FP, 3, SP, str);                 //     sw       $fp 12($sp)
+            emit_store(SELF, 2, SP, str);               //     sw       $s0 8($sp)
+            emit_store(RA, 1, SP, str);                 //     sw       $ra 4($sp)
+            emit_addiu(FP, SP, 4, str);                 //     addiu    $fp $sp 4
+            emit_move(SELF, ACC, str);                  //     move     $s0 $a0
+            // setup context
+            CgenContextP ctx = new CgenContext();
+            // so = current class
+            // E = [
+            //     attr0: la0, attr1: la1, ..., attrm: lam,
+            //     arg0: lx0, arg1: lx1, ..., argn: lxn
+            // ]
+            // S = [
+            //     la0 -> (3, SELF), la1 -> (4, SELF), ..., lam -> (3+m, SELF),
+            //     lx0 -> (3, FP),  lx1 -> (4, FP),   ..., lxn -> (3+n, FP)
+            // ]
+            ctx->set_self_object(class_name);
+            ctx->enterscope();
+            // set attribute location
+            std::vector<Symbol> attrs = node->get_attrs();
+            for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
+                int loc = ctx->newloc();
+                ctx->set_loc(*it, loc);
+                ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
+            }
+            // set formal location
+            Formals formals = method_definition->get_formals();
+            for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+                int loc = ctx->newloc();
+                ctx->set_loc(formals->nth(i)->get_name(), loc);
+                ctx->set_memory_address(loc, std::pair<int, char*>(3 + i, FP));
+            }
+            method_definition->get_expr()->code(str, ctx);
+            ctx->exitscope();
+            // template: restore original state
+            emit_load(FP, 3, SP, str);                  //     lw       $fp 12($sp)
+            emit_load(SELF, 2, SP, str);                //     lw       $s0 8($sp)
+            emit_load(RA, 1, SP, str);                  //     lw       $ra 4($sp)
+            int z = 12 + 4 * formals->len();
+            emit_addiu(SP, SP, z, str);                 //     addiu    $sp $sp 12
+            emit_return(str);                           //     jr       $ra
+        }
+    }
 }
 
 CgenClassTable::CgenClassTable(Classes classes, ostream &s)
@@ -1214,7 +1273,7 @@ void CgenClassTable::code() {
     if (cgen_debug) cout << "coding class init methods" << endl;
     code_class_init_methods();
 
-    // TODO: 6. <Class Name>.<Method Name> for all methods of each class
+    // 6. <Class Name>.<Method Name> for all methods of each class
     if (cgen_debug) cout << "coding class methods" << endl;
     code_class_methods();
 }

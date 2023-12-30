@@ -81,10 +81,12 @@ virtual bool is_attr() = 0;
 void dump_with_types(ostream&,int);    
 
 
-#define method_EXTRAS               \
-bool is_method() { return true; }   \
-bool is_attr() { return false; }    \
-Symbol get_name() { return name; } 
+#define method_EXTRAS                     \
+bool is_method() { return true; }         \
+bool is_attr() { return false; }          \
+Symbol get_name() { return name; }        \
+Formals get_formals() { return formals; } \
+Expression get_expr() { return expr; }
 
 
 #define attr_EXTRAS                      \
@@ -95,12 +97,14 @@ Symbol get_type() { return type_decl; }  \
 Expression get_init() { return init; }
 
 
-#define Formal_EXTRAS                              \
-virtual void dump_with_types(ostream&,int) = 0;
+#define Formal_EXTRAS                            \
+virtual void dump_with_types(ostream&,int) = 0;  \
+virtual Symbol get_name() = 0;
 
 
-#define formal_EXTRAS                           \
-void dump_with_types(ostream&,int);
+#define formal_EXTRAS               \
+void dump_with_types(ostream&,int); \
+Symbol get_name() { return name; }
 
 
 #define Case_EXTRAS                             \
