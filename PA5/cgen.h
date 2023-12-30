@@ -60,7 +60,7 @@ public:
    CgenClassTable(Classes, ostream& str);
    void code();
    CgenNodeP root();
-   CgenNodeP get_cgen_node(Symbol name) { return cgen_node_map[name]; };
+   CgenNodeP get_cgen_node(Symbol name) { return cgen_node_map[name]; }
 };
 
 

@@ -114,6 +114,8 @@ void program_class::cgen(ostream &os) {
 
     initialize_constants();
     codegen_classtable = new CgenClassTable(classes, os);
+    codegen_classtable->code();
+    codegen_classtable->exitscope();
 
     os << "\n# end of generated code\n";
 }
@@ -863,6 +865,7 @@ void CgenClassTable::code_class_methods() {
             if (node->get_method_owned_by(method_name) != class_name) {
                 continue;
             }
+            if (cgen_debug) cout << "code method " << method_name << " for class " << class_name << endl;
             method_class* method_definition = node->get_method_definition(method_name);
             //                                             <Class>.<Method>:
             str << class_name << METHOD_SEP << method_name << LABEL; 
@@ -889,6 +892,7 @@ void CgenClassTable::code_class_methods() {
             // set attribute location
             std::vector<Symbol> attrs = node->get_attrs();
             for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
+                if (cgen_debug) cout << "ctx: set attribute " << *it << ": " << 4 * node->get_attr_offset(*it) << "(" << SELF << ")" << endl;
                 int loc = ctx->newloc();
                 ctx->set_loc(*it, loc);
                 ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
@@ -896,6 +900,7 @@ void CgenClassTable::code_class_methods() {
             // set formal location
             Formals formals = method_definition->get_formals();
             for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+                if (cgen_debug) cout << "ctx: set formal " << formals->nth(i)->get_name() << ": " << 4 * (3 + i) << "(" << FP << ")" << endl;
                 int loc = ctx->newloc();
                 ctx->set_loc(formals->nth(i)->get_name(), loc);
                 ctx->set_memory_address(loc, std::pair<int, char*>(3 + i, FP));
@@ -926,9 +931,6 @@ CgenClassTable::CgenClassTable(Classes classes, ostream &s)
     install_classes(classes);
     build_inheritance_tree();
     build_cgen_node_map();
-
-    code();
-    exitscope();
 }
 
 void CgenClassTable::install_basic_classes() {
@@ -1374,12 +1376,17 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {
     emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
     emit_jal("_dispatch_abort", s);          //     jal     _dispatch_abort
     emit_label_def(skip_abort_label_idx, s); // label<skip_abort_label_idx>:
-    //                                              jal     <expr>.<name>
-    if (expr->get_type() == SELF_TYPE) {
-        s << JALR; emit_method_ref(ctx->get_self_object(), name, s); s << endl;
-    } else {
-        s << JAL; emit_method_ref(expr->get_type(), name, s); s << endl;
+    // load dispatch table
+    emit_load(T1, 2, ACC, s);                //     lw      $t1 8($a0)
+    // find method offset
+    Symbol dispatch_target = expr->get_type();
+    if (dispatch_target == SELF_TYPE) {
+        dispatch_target = ctx->get_self_object();
     }
+    int method_idx = codegen_classtable->get_cgen_node(dispatch_target)->get_method_index(name);
+    if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
+    emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
+    emit_jalr(T1, s);                        //     jalr    $t1
 }
 
 //********************************************************
@@ -1823,6 +1830,11 @@ void no_expr_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void object_class::code(ostream &s, CgenContextP ctx) {
+    if (name == self) {
+        emit_move(ACC, SELF, s);         //     move    $a0 $s0
+        return;
+    }
+
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
     if (strcmp(mem_addr.second, SP) == 0) {
