@@ -1252,7 +1252,7 @@ int get_next_label_idx() {
 
 //********************************************************
 //
-// Expression ::= name <- expr
+// Assign Expression ::= name <- expr
 //
 //********************************************************
 void assign_class::code(ostream &s, CgenContextP ctx) {
@@ -1273,7 +1273,7 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {}
 
 //********************************************************
 //
-// Expression ::= if pred then then_exp else else_exp fi
+// Cond Expression ::= if pred then then_exp else else_exp fi
 // pred expression is guaranteed to be Bool (checked by semantic analyzer)
 //
 //********************************************************
@@ -1294,7 +1294,7 @@ void cond_class::code(ostream &s, CgenContextP ctx) {
 
 //********************************************************
 //
-// Expression ::= while pred loop body pool
+// Loop Expression ::= while pred loop body pool
 // pred expression is guaranteed to be Bool (checked by semantic analyzer)
 //
 //********************************************************
@@ -1636,6 +1636,11 @@ void comp_class::code(ostream &s, CgenContextP ctx) {
     emit_label_def(done_label_idx, s);    // label<done_label_idx>:
 }
 
+//********************************************************
+//
+// IntConst Expression ::= Int
+//
+//********************************************************
 void int_const_class::code(ostream &s, CgenContextP ctx) {
     //
     // Need to be sure we have an IntEntry *, not an arbitrary Symbol
@@ -1643,10 +1648,21 @@ void int_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_int(ACC, inttable.lookup_string(token->get_string()), s);
 }
 
+//********************************************************
+//
+// StringConst Expression ::= string
+//
+//********************************************************
 void string_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
 }
 
+//********************************************************
+//
+// BoolConst Expression ::= true
+//                        | false
+//
+//********************************************************
 void bool_const_class::code(ostream &s, CgenContextP ctx) {
     emit_load_bool(ACC, BoolConst(val), s);
 }
@@ -1682,13 +1698,19 @@ void isvoid_class::code(ostream &s, CgenContextP ctx) {
 
 //********************************************************
 //
-// No_expr Expression ::= /* empty */
+// NoExpr Expression ::= /* empty */
 //
 //********************************************************
 void no_expr_class::code(ostream &s, CgenContextP ctx) {
     emit_move(ACC, ZERO, s);              //     move    $a0 $zero
 }
 
+//********************************************************
+//
+// Object Expression ::= name
+// name is guaranteed to be a valid identifier (checked by semantic analyzer)
+//
+//********************************************************
 void object_class::code(ostream &s, CgenContextP ctx) {
     int loc = ctx->get_loc(name);
     MemoryAddress mem_addr = ctx->get_memory_address(loc);
