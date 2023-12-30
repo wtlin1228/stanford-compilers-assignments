@@ -912,8 +912,9 @@ void CgenClassTable::code_class_methods() {
             emit_load(SELF, 2, SP, str);                //     lw       $s0 8($sp)
             emit_load(RA, 1, SP, str);                  //     lw       $ra 4($sp)
             int z = 12 + 4 * formals->len();
-            emit_addiu(SP, SP, z, str);                 //     addiu    $sp $sp 12
+            emit_addiu(SP, SP, z, str);                 //     addiu    $sp $sp 12 + 4 * formals->len()
             emit_return(str);                           //     jr       $ra
+            ctx->decrement_variable_count(actual->len());
         }
     }
 }
@@ -1336,10 +1337,12 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     // caller side saves the actual parameters in reverse order
     // those values will be popped by the callee, so we don't
     // need to pop them here.
-    for (int i = actual->len() - 1; i >= 0; --i) {
+    ctx->increment_variable_count(actual->len());
+    //                                              addiu   $sp $sp -4 * <actual_len>
+    emit_addiu(SP, SP, -4 * actual->len(), s); 
+    for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_push(ACC, s);                  //     sw      $a0 0($sp)
-                                            //     addiu   $sp $sp -4
+        emit_store(ACC, 1 + i, SP, s);  //    sw      $a0 4 * <i>($sp)
     }
     // check if expr is void
     expr->code(s, ctx);
@@ -1369,10 +1372,12 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {
     // caller side saves the actual parameters in reverse order
     // those values will be popped by the callee, so we don't
     // need to pop them here.
-    for (int i = actual->len() - 1; i >= 0; --i) {
+    ctx->increment_variable_count(actual->len());
+    //                                              addiu   $sp $sp -4 * <actual_len>
+    emit_addiu(SP, SP, -4 * actual->len(), s); 
+    for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_push(ACC, s);                  //     sw      $a0 0($sp)
-                                            //     addiu   $sp $sp -4
+        emit_store(ACC, 1 + i, SP, s);  //    sw      $a0 4 * <i>($sp)
     }
     // check if expr is void
     expr->code(s, ctx);
