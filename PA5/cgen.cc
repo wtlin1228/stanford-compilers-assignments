@@ -1210,7 +1210,7 @@ void CgenClassTable::code() {
     if (cgen_debug) cout << "coding global text" << endl;
     code_global_text();
 
-    // TODO: 5. <Class Name>_init for all classes
+    // 5. <Class Name>_init for all classes
     if (cgen_debug) cout << "coding class init methods" << endl;
     code_class_init_methods();
 
