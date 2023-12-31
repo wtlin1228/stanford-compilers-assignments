@@ -921,8 +921,8 @@ void CgenClassTable::code_class_methods() {
 CgenClassTable::CgenClassTable(Classes classes, ostream &s)
     : nds(NULL), str(s) {
     stringclasstag = STRING_CLASS_TAG;
-    intclasstag = BOOL_CLASS_TAG;
-    boolclasstag = INT_CLASS_TAG;
+    intclasstag = INT_CLASS_TAG;
+    boolclasstag = BOOL_CLASS_TAG;
     next_classtag = NEXT_CLASS_TAG;
 
     enterscope();
@@ -1341,7 +1341,7 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     emit_addiu(SP, SP, -4 * actual->len(), s); 
     for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_store(ACC, 1 + i, SP, s);  //    sw      $a0 4 * <i>($sp)
+        emit_store(ACC, 1 + i, SP, s);       //     sw      $a0 4 * <i>($sp)
     }
     // check if expr is void
     expr->code(s, ctx);
@@ -1379,7 +1379,7 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {
     emit_addiu(SP, SP, -4 * actual->len(), s); 
     for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_store(ACC, 1 + i, SP, s);  //    sw      $a0 4 * <i>($sp)
+        emit_store(ACC, 1 + i, SP, s);        //    sw      $a0 4 * <i>($sp)
     }
     // check if expr is void
     expr->code(s, ctx);
