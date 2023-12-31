@@ -44,7 +44,7 @@ Grading: 74/74
 
 ## PA5 - Code Generator
 
-Grading: 56/63
+Grading: 57/63
 
 - [cgen-context.h](PA5/cgen-context.h)
 - [cgen.cc](PA5/cgen.cc)

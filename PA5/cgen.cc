@@ -1461,58 +1461,49 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
     emit_load_address(ACC, "str_const0", s); //     la      $a0 <filename>
     emit_jal("_case_abort2", s);             //     jal     _case_abort2
     emit_branch(done_label_idx, s);          //     b       label<done_label_idx>
-    emit_label_def(skip_abort2_label_idx, s); // label<skip_abort_label_idx>:
-    // build inheritance chain map for type C so we can iterate through
-    // the branches and find the least type <typek> such that C <= <typek>
-    // {
-    //     current class -> 0
-    //     parent class -> 1
-    //     ...
-    //     Object -> n
-    // }
-    std::map<Symbol, int> inheritance_chain;
-    CgenNodeP node = codegen_classtable->get_cgen_node(expr->get_type());
-    while (node->name != Object) {
-        inheritance_chain[node->name] = inheritance_chain.size();
-        node = node->get_parentnd();
-    }
-    inheritance_chain[Object] = inheritance_chain.size();
-    // build branch label map so we know which branch to jump to
-    // {
-    //     <type0> -> i
-    //     <type1> -> i + 1
-    //     ...
-    //     <typen> -> i + n
-    // }
-    std::map<Symbol, int> branch_label_map;
+    //                                          label<skip_abort_label_idx>:
+    emit_label_def(skip_abort2_label_idx, s); 
+    
+    std::vector<std::vector<CgenNodeP> > level_nodes_for_each_branch;
+    // starts from [[branch1], [branch2], ...]
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
-        branch_class* branch = static_cast<branch_class*>(cases->nth(i));
-        branch_label_map[branch->type_decl] = get_next_label_idx();
+        Symbol branch_type = static_cast<branch_class*>(cases->nth(i))->type_decl;
+        CgenNodeP branch_node = codegen_classtable->get_cgen_node(branch_type);
+        std::vector<CgenNodeP> level_nodes;
+        level_nodes.push_back(branch_node);
+        level_nodes_for_each_branch.push_back(level_nodes);
     }
-    // decide which branch to jump to
-    Symbol should_jump_to_branch = NULL;
-    for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
-        branch_class* branch = static_cast<branch_class*>(cases->nth(i));
-        Symbol branch_type = branch->type_decl;
-        if (inheritance_chain.count(branch_type) == 0) {
-            // branch type is not in the inheritance chain
-            // we can skip this branch
-            continue;
-        }
-        if (should_jump_to_branch == NULL) {
-            // first match branch
-            should_jump_to_branch = branch_type;
-        } else {
-            // find the least type <typek> such that C <= <typek>
-            if (inheritance_chain[branch_type] < inheritance_chain[should_jump_to_branch]) {
-                should_jump_to_branch = branch_type;
+    // emit branch label if the expr's classtag matches the branch's classtag
+    // stops when all branch node lists are empty
+    bool all_empty = false;
+    int branch_label_idx_offset = skip_abort2_label_idx + 1;
+    emit_load(T2, 0, ACC, s);                //     lw      $t2 0($a0)
+    while (!all_empty) {
+        all_empty = true;
+        for (size_t i = 0; i < level_nodes_for_each_branch.size(); ++i) {
+            std::vector<CgenNodeP> current_level = level_nodes_for_each_branch[i];
+            if (current_level.empty()) {
+                continue;
             }
+            all_empty = false;
+            std::vector<CgenNodeP> next_level;
+            int branch_label_idx = branch_label_idx_offset + i;
+            for (size_t j = 0; j < current_level.size(); ++j) {
+                CgenNodeP node = current_level[j];
+                // check if the expr's classtag matches the node's classtag
+                int tag = node->get_tag();
+                emit_load_imm(T1, tag, s);     //   li      $t1 <branch_label_idx>
+                //                                  beq     $t1 $t2 label<branch_label_idx>
+                emit_beq(T1, T2, branch_label_idx, s);  
+                // append its children to the next level no matter if the branch matches
+                for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
+                    next_level.push_back(l->hd());
+                }
+            }
+            level_nodes_for_each_branch[i] = next_level;
         }
     }
-    if (should_jump_to_branch != NULL) {
-        // jump to the branch
-        emit_branch(branch_label_map[should_jump_to_branch], s); 
-    }
+
     // _case_abort:
     // Should be called when a case statement has no match.
     // The class name of the object in $a0 is printed, and execution halts.
@@ -1521,7 +1512,7 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
     // code the branches
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
         branch_class* branch = static_cast<branch_class*>(cases->nth(i));
-        int branch_label_idx = branch_label_map[branch->type_decl];
+        int branch_label_idx = get_next_label_idx();
         emit_label_def(branch_label_idx, s); // label<branch_label_idx>:
         emit_push(ACC, s);                   //     sw      $a0 0($sp)
                                              //     addiu   $sp $sp -4
