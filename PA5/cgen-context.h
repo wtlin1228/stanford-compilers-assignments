@@ -69,7 +69,9 @@ public:
     //    Offset of v3 is 3 - 2 = 1
     // So the we know v1 is at (3, SP), v2 is at (2, SP), and v3 is at (1, SP)
     void increment_variable_count() { variable_count++; }
+    void increment_variable_count(int count) { variable_count += count; }
     void decrement_variable_count() { variable_count--; }
+    void decrement_variable_count(int count) { variable_count -= count; }
     int  get_variable_count() { return variable_count; }
     int  get_variable_offset(int variable_index) { return variable_count - variable_index; }
 };

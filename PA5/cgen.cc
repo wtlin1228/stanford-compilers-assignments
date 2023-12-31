@@ -914,7 +914,7 @@ void CgenClassTable::code_class_methods() {
             int z = 12 + 4 * formals->len();
             emit_addiu(SP, SP, z, str);                 //     addiu    $sp $sp 12 + 4 * formals->len()
             emit_return(str);                           //     jr       $ra
-            ctx->decrement_variable_count(actual->len());
+            ctx->decrement_variable_count(formals->len());
         }
     }
 }
@@ -1592,7 +1592,9 @@ void plus_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx);
+    ctx->decrement_variable_count();
     emit_jal("Object.copy", s);           //     jal     Object.copy
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
@@ -1612,7 +1614,9 @@ void sub_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx);
+    ctx->decrement_variable_count();
     emit_jal("Object.copy", s);           //     jal     Object.copy
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
@@ -1632,7 +1636,9 @@ void mul_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx);
+    ctx->decrement_variable_count();
     emit_jal("Object.copy", s);           //     jal     Object.copy
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
@@ -1652,7 +1658,9 @@ void divide_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx);
+    ctx->decrement_variable_count();
     emit_jal("Object.copy", s);           //     jal     Object.copy
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
@@ -1686,7 +1694,9 @@ void lt_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx); 
+    ctx->decrement_variable_count();
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
     emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
@@ -1711,7 +1721,9 @@ void eq_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx);
+    ctx->decrement_variable_count();
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
     emit_move(T2, ACC, s);                //     move    $t2 $a0
@@ -1737,7 +1749,9 @@ void leq_class::code(ostream &s, CgenContextP ctx) {
     e1->code(s, ctx);                                 
     emit_push(ACC, s);                    //     sw      $a0 0($sp)
                                           //     addiu   $sp $sp -4
+    ctx->increment_variable_count();
     e2->code(s, ctx); 
+    ctx->decrement_variable_count();
     emit_pop(T1, s);                      //     lw      $t1 4($sp)
                                           //     addiu   $sp $sp 4
     emit_fetch_int(T1, T1, s);            //     lw      $t1 12($t1)
