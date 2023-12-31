@@ -1823,10 +1823,29 @@ void bool_const_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void new__class::code(ostream &s, CgenContextP ctx) {
-    Symbol class_name = type_name == SELF_TYPE ? ctx->get_self_object() : type_name;
-    emit_load_prot(ACC, class_name, s);   //     la      $a0 <Class>_protObj
+    if (type_name != SELF_TYPE) {
+        //                                       la      $a0 <Class>_protObj
+        emit_load_prot(ACC, type_name, s); 
+        emit_jal("Object.copy", s);       //     jal     Object.copy
+        emit_jal_init(type_name, s);      //     jal     <Class>_init
+        return;
+    }
+    //                                           la      $t1 class_objTab
+    emit_load_address(T1, CLASSOBJTAB, s); 
+    emit_load(T2, 0, SELF, s);            //     lw      $t2 0($s0)
+    // each class takes 2 words in class_objTab
+    //     - <Class>_protObj
+    //     - <Class>_init
+    emit_sll(T2, T2, 3, s);               //     sll     $t2 $t2 3
+    emit_addu(T1, T1, T2, s);             //     addu    $t1 $t1 $t2
+    emit_push(T1, s);                     //     sw      $t1 0($sp)
+                                          //     addiu   $sp $sp -4
+    emit_load(ACC, 0, T1, s);             //     lw      $a0 0($t1)
     emit_jal("Object.copy", s);           //     jal     Object.copy
-    emit_jal_init(class_name, s);         //     jal     <Class>_init
+    emit_pop(T1, s);                      //     lw      $t1 4($sp)
+                                          //     addiu   $sp $sp 4
+    emit_load(T1, 1, T1, s);              //     lw      $t1 4($t1)
+    emit_jalr(T1, s);                     //     jalr    $t1
 }
 
 //********************************************************
