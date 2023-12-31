@@ -865,7 +865,6 @@ void CgenClassTable::code_class_methods() {
             if (node->get_method_owned_by(method_name) != class_name) {
                 continue;
             }
-            if (cgen_debug) cout << "code method " << method_name << " for class " << class_name << endl;
             method_class* method_definition = node->get_method_definition(method_name);
             //                                             <Class>.<Method>:
             str << class_name << METHOD_SEP << method_name << LABEL; 
@@ -892,7 +891,6 @@ void CgenClassTable::code_class_methods() {
             // set attribute location
             std::vector<Symbol> attrs = node->get_attrs();
             for (std::vector<Symbol>::iterator it = attrs.begin() ; it != attrs.end(); ++it) {
-                if (cgen_debug) cout << "ctx: set attribute " << *it << ": " << 4 * node->get_attr_offset(*it) << "(" << SELF << ")" << endl;
                 int loc = ctx->newloc();
                 ctx->set_loc(*it, loc);
                 ctx->set_memory_address(loc, std::pair<int, char*>(node->get_attr_offset(*it), SELF));
@@ -900,10 +898,9 @@ void CgenClassTable::code_class_methods() {
             // set formal location
             Formals formals = method_definition->get_formals();
             for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
-                if (cgen_debug) cout << "ctx: set formal " << formals->nth(i)->get_name() << ": " << 4 * (3 + i) << "(" << FP << ")" << endl;
                 int loc = ctx->newloc();
                 ctx->set_loc(formals->nth(i)->get_name(), loc);
-                ctx->set_memory_address(loc, std::pair<int, char*>(3 + i, FP));
+                ctx->set_memory_address(loc, std::pair<int, char*>(3 + formals->len() - 1 - i, FP));
             }
             method_definition->get_expr()->code(str, ctx);
             ctx->exitscope();
@@ -1333,15 +1330,15 @@ void assign_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
-    // caller side saves the actual parameters in reverse order
-    // those values will be popped by the callee, so we don't
-    // need to pop them here.
-    ctx->increment_variable_count(actual->len());
-    //                                              addiu   $sp $sp -4 * <actual_len>
-    emit_addiu(SP, SP, -4 * actual->len(), s); 
+    // Caller side saves the actual parameters in left-to-right order.
+    // The class lecture says that the callee side saves the actual parameters
+    // in right-to-left order, but the cool runtime expects the actual parameters
+    // to be saved in left-to-right order.
     for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_store(ACC, 1 + i, SP, s);       //     sw      $a0 4 * <i>($sp)
+        emit_push(ACC, s);                     //    push    $a0
+        //                                           addiu   $sp $sp -4
+        ctx->increment_variable_count();
     }
     // check if expr is void
     expr->code(s, ctx);
@@ -1371,15 +1368,15 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
 //
 //********************************************************
 void dispatch_class::code(ostream &s, CgenContextP ctx) {
-    // caller side saves the actual parameters in reverse order
-    // those values will be popped by the callee, so we don't
-    // need to pop them here.
-    ctx->increment_variable_count(actual->len());
-    //                                              addiu   $sp $sp -4 * <actual_len>
-    emit_addiu(SP, SP, -4 * actual->len(), s); 
+    // Caller side saves the actual parameters in left-to-right order.
+    // The class lecture says that the callee side saves the actual parameters
+    // in right-to-left order, but the cool runtime expects the actual parameters
+    // to be saved in left-to-right order.
     for (int i = 0; i < actual->len(); ++i) {
         actual->nth(i)->code(s, ctx);
-        emit_store(ACC, 1 + i, SP, s);        //    sw      $a0 4 * <i>($sp)
+        emit_push(ACC, s);                     //    push    $a0
+        //                                           addiu   $sp $sp -4
+        ctx->increment_variable_count();
     }
     // check if expr is void
     expr->code(s, ctx);
