@@ -914,7 +914,6 @@ void CgenClassTable::code_class_methods() {
             int z = 12 + 4 * formals->len();
             emit_addiu(SP, SP, z, str);                 //     addiu    $sp $sp 12 + 4 * formals->len()
             emit_return(str);                           //     jr       $ra
-            ctx->decrement_variable_count(formals->len());
         }
     }
 }
@@ -1361,6 +1360,9 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
     emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
     emit_jalr(T1, s);                        //     jalr    $t1
+    // the callee side pops the actual parameters, so we need to decrement
+    // the variable count here.
+    ctx->decrement_variable_count(actual->len());
 }
 
 //********************************************************
@@ -1398,6 +1400,9 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {
     if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
     emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
     emit_jalr(T1, s);                        //     jalr    $t1
+    // the callee side pops the actual parameters, so we need to decrement
+    // the variable count here.
+    ctx->decrement_variable_count(actual->len());
 }
 
 //********************************************************
