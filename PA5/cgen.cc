@@ -1354,7 +1354,6 @@ void static_dispatch_class::code(ostream &s, CgenContextP ctx) {
     s << LA << T1 << " " << dispatch_target << DISPTAB_SUFFIX << endl;
     // find method offset
     int method_idx = codegen_classtable->get_cgen_node(dispatch_target)->get_method_index(name);
-    if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
     emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
     emit_jalr(T1, s);                        //     jalr    $t1
     // the callee side pops the actual parameters, so we need to decrement
@@ -1394,7 +1393,6 @@ void dispatch_class::code(ostream &s, CgenContextP ctx) {
         dispatch_target = ctx->get_self_object();
     }
     int method_idx = codegen_classtable->get_cgen_node(dispatch_target)->get_method_index(name);
-    if (cgen_debug) cout << "code dispatch: " << dispatch_target << "." << name << " method_idx = " << method_idx << endl;
     emit_load(T1, method_idx, T1, s);        //     lw      $t1 <method_idx>($t1)
     emit_jalr(T1, s);                        //     jalr    $t1
     // the callee side pops the actual parameters, so we need to decrement
@@ -1465,6 +1463,7 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
     emit_label_def(skip_abort2_label_idx, s); 
     
     std::vector<std::vector<CgenNodeP> > level_nodes_for_each_branch;
+    std::vector<int> branch_label_idx_for_each_branch;
     // starts from [[branch1], [branch2], ...]
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
         Symbol branch_type = static_cast<branch_class*>(cases->nth(i))->type_decl;
@@ -1472,11 +1471,11 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
         std::vector<CgenNodeP> level_nodes;
         level_nodes.push_back(branch_node);
         level_nodes_for_each_branch.push_back(level_nodes);
+        branch_label_idx_for_each_branch.push_back(get_next_label_idx());
     }
     // emit branch label if the expr's classtag matches the branch's classtag
     // stops when all branch node lists are empty
     bool all_empty = false;
-    int branch_label_idx_offset = skip_abort2_label_idx + 1;
     emit_load(T2, 0, ACC, s);                //     lw      $t2 0($a0)
     while (!all_empty) {
         all_empty = true;
@@ -1487,14 +1486,13 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
             }
             all_empty = false;
             std::vector<CgenNodeP> next_level;
-            int branch_label_idx = branch_label_idx_offset + i;
             for (size_t j = 0; j < current_level.size(); ++j) {
                 CgenNodeP node = current_level[j];
                 // check if the expr's classtag matches the node's classtag
                 int tag = node->get_tag();
                 emit_load_imm(T1, tag, s);     //   li      $t1 <branch_label_idx>
                 //                                  beq     $t1 $t2 label<branch_label_idx>
-                emit_beq(T1, T2, branch_label_idx, s);  
+                emit_beq(T1, T2, branch_label_idx_for_each_branch[i], s);  
                 // append its children to the next level no matter if the branch matches
                 for (List<CgenNode> *l = node->get_children(); l; l = l->tl()) {
                     next_level.push_back(l->hd());
@@ -1509,10 +1507,11 @@ void typcase_class::code(ostream &s, CgenContextP ctx) {
     // The class name of the object in $a0 is printed, and execution halts.
     emit_jal("_case_abort", s);              //     jal     _case_abort
     emit_branch(done_label_idx, s);          //     b       label<done_label_idx>
+
     // code the branches
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
         branch_class* branch = static_cast<branch_class*>(cases->nth(i));
-        int branch_label_idx = get_next_label_idx();
+        int branch_label_idx = branch_label_idx_for_each_branch[i];
         emit_label_def(branch_label_idx, s); // label<branch_label_idx>:
         emit_push(ACC, s);                   //     sw      $a0 0($sp)
                                              //     addiu   $sp $sp -4
